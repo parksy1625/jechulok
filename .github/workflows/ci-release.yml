@@ -1,0 +1,96 @@
+name: "JechulOK | Tested production release"
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jechulok-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    name: Build + real browser regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - name: Build with SHA-256 pinned dependencies
+        run: npm run build
+      - name: Verify SHA-256 and static routes
+        run: npm run verify
+      - name: Run local website
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory dist >/tmp/jechulok-http.log 2>&1 &
+          for i in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/jechulok-http.log
+          exit 1
+      - name: Test actual JPG, ZIP, PDF and vendor loading
+        run: npm test
+        env:
+          BASE_URL: http://127.0.0.1:4173
+
+  deploy:
+    name: Stage production, verify, promote
+    needs: [regression]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment: production
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      VERCEL_CLI_VERSION: '64.3.1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - name: Require release configuration
+        shell: bash
+        run: |
+          test -n "$VERCEL_TOKEN" || { echo 'Configure production environment secret VERCEL_TOKEN'; exit 1; }
+          test -n "$VERCEL_ORG_ID" || { echo 'Configure variable VERCEL_ORG_ID'; exit 1; }
+          test -n "$VERCEL_PROJECT_ID" || { echo 'Configure variable VERCEL_PROJECT_ID'; exit 1; }
+      - name: Install pinned Vercel CLI
+        run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
+      - name: Load production project configuration
+        run: vercel pull --yes --environment=production
+      - name: Build staged release
+        run: vercel build --prod
+      - id: stage
+        name: Deploy without assigning production domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="$(vercel deploy --prebuilt --prod --skip-domain)"
+          DEPLOYMENT_URL="$url" node -e 'const u=new URL(process.env.DEPLOYMENT_URL); if(u.protocol!=="https:"||!u.hostname.endsWith(".vercel.app")||u.username||u.password)process.exit(1)'
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: Verify staged release in Chromium
+        run: npm test
+        env:
+          BASE_URL: ${{ steps.stage.outputs.url }}
+      - name: Promote only after browser tests pass
+        run: vercel promote "${{ steps.stage.outputs.url }}"
