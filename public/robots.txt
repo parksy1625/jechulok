@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jechulok.vercel.app/sitemap.xml
