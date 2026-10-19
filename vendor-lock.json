@@ -1,0 +1,42 @@
+[
+  {
+    "name": "pdf-lib.min.js",
+    "size": 525099,
+    "sha": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f",
+    "urls": [
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js",
+      "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
+    ],
+    "license": "MIT"
+  },
+  {
+    "name": "pdf.min.js",
+    "size": 320004,
+    "sha": "5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946",
+    "urls": [
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"
+    ],
+    "license": "Apache-2.0"
+  },
+  {
+    "name": "pdf.worker.min.js",
+    "size": 1087212,
+    "sha": "feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b",
+    "urls": [
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+    ],
+    "license": "Apache-2.0"
+  },
+  {
+    "name": "heic2any.min.js",
+    "size": 1351840,
+    "sha": "0963cfa50e9e1e7e6af929a40a81e3e898a673f1270eafa6917dd137e4968164",
+    "urls": [
+      "https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js",
+      "https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"
+    ],
+    "license": "MIT"
+  }
+]
