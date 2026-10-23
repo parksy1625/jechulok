@@ -1,4 +1,4 @@
-# 제출OK MCP v1.3 — local stdio server
+# 제출OK MCP v1.4 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -50,6 +50,8 @@ Important: The default allowed directory is the MCP process's working directory,
 | `start_submission_job` | Plan and optionally start an asynchronously pollable local batch | Only with both flags and separate real user approval |
 | `get_submission_job` | Poll per-file job progress and final outcome | No |
 | `cancel_submission_job` | Request cooperative cancellation and batch rollback | No |
+| `list_interrupted_submission_jobs` | Read-only recovery preview after restart | No |
+| `resolve_interrupted_submission_job` | Preview or explicitly remove only orphaned journal-owned temporary files | Three explicit confirmations |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -496,7 +498,7 @@ still require manual review.
 
 ## v1.3 — Cooperative background jobs, progress and cancel
 
-Local MCP now exposes **17 tools**. The three new tools are for batching only:
+Local MCP now exposes **19 tools**. The three new tools are for batching only:
 
 ```json
 {
@@ -543,3 +545,49 @@ retry. Previously existing files are never intentionally overwritten.
 dry-run and double-approval flags. Existing verification and institutional
 acceptance limitations still apply. No remote HTTP server, automatic upload
 or persistent job history has been introduced.
+
+
+## v1.4 — Durable journal, staged output and manual crash recovery
+
+There are now **19 MCP tools**. The new recovery tools are read-only unless
+the user expressly authorizes deletion of this job's **private staged
+temporary files**. Existing user outputs are NEVER automatically deleted.
+
+Approved background jobs save a minimal JSON journal in
+`<first JECHULOK_ALLOWED_DIRS root>/.jechulok-jobs/`. This folder is
+created **only after** execution is approved. On POSIX it is mode 0700
+and individual records use mode 0600. Records persist output paths,
+temporary paths and job states; they intentionally omit notice text,
+input paths, user document contents, and reusable approval flags.
+The journal might still expose identity through output names/paths.
+Do not commit, upload or share it.
+
+New background jobs stage each output in the **same allowed directory**
+under a random `.jechulok-<job-id>-<item-id>` filename. File processing
+and technical validation complete before publishing approved final names.
+Publishing uses exclusive hard links and independently revalidates final
+files; it cannot overwrite an existing file. If a conflict occurs, report
+failure without removing another process's output. No real-time server
+push protocol or remote API is added.
+
+**Recovery example (after an MCP server restart):**
+
+1. `list_interrupted_submission_jobs()` returns a read-only list of
+   interrupted job IDs, the stage basenames and presence of final outputs.
+2. `resolve_interrupted_submission_job(job_id)` shows the required
+   confirmations without deleting anything.
+3. The user **manually inspects all final output files**. After separately
+   consenting to removal of private staged files only, invoke
+   `resolve_interrupted_submission_job(job_id, cleanup_staging=true,
+   confirm_cleanup=true, checked_final_outputs=true)`.
+4. The tool refuses cleanup if the prior PID may still be alive or if a
+   stage cannot be safely authorized, is a symlink, or does not match the
+   journal's unique job-name convention.
+5. After status `reviewed`, start a completely new dry-run, confirm its
+   exact plan, and obtain fresh human approval before execution.
+
+A server/process crash can occur during non-atomic multi-file publication.
+Partial **final** output files may remain: **do not delete them automatically**.
+The tool never uploads to an institution or promises to restore a whole
+batch transaction. This is crash detection with explicit remediation,
+NOT OS-level crash-atomic file transactions or resume-on-restart.
