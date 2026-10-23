@@ -165,7 +165,7 @@ class V06OutputTests(unittest.IsolatedAsyncioTestCase):
         async with Client(server.mcp) as client:
             listing = await client.list_tools()
             names = {entry.name for entry in listing.tools}
-            self.assertEqual(len(names), 14)
+            self.assertEqual(len(names), 17)
             self.assertIn("suggest_submission_output_paths", names)
             response = await client.call_tool("suggest_submission_output_paths", {
                 "notice_text": NOTICE, "assignments": self.matches,
