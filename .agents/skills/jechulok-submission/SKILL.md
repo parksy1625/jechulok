@@ -5,10 +5,50 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v1.4 — Crash-safe local job records and explicit recovery
+
+The local MCP now exposes **19 tools**. Approved background jobs
+(`start_submission_job` with two execution flags *after real user approval*)
+write a **private, local, atomic job journal** in
+`JECHULOK_ALLOWED_DIRS`'s first configured root under
+`.jechulok-jobs/`. On POSIX the directory and files are created with
+restrictive permissions. Records contain a job ID, state, staged and final
+output paths and progress counts, but **no notice text, source file paths,
+document contents, upload tokens or reusable approval**.
+
+New jobs prepare JPG/PDF into a random, exclusive, same-directory
+`.*.jechulok-<job-id>-<item-id>.jpg/pdf` staging name. Every item is
+technically checked before publishing. Published files use an exclusive
+hard link to prevent overwriting another process's final filename.
+The original files remain unchanged. A cancelled/failed normal batch
+cleans up its private staging files. Publishing is **not a single atomic
+multi-file transaction**: an OS crash in the publishing phase may leave
+some approved final outputs. Those outputs are never automatically deleted.
+
+After a crash or forced restart, call `list_interrupted_submission_jobs`
+to inspect **recorded** unfinished jobs, temp filename presence and
+possible final outputs. An old job is **never restarted automatically**;
+starting a new approved job is blocked until interrupted records are reviewed.
+
+To resolve, call `resolve_interrupted_submission_job(job_id)` first
+(read-only preview). ONLY after the user checks final output paths and
+authorizes private temp cleanup, call it with
+`cleanup_staging=true`, `confirm_cleanup=true`, and
+`checked_final_outputs=true`. The tool verifies the stored random stage
+name, scope and symlink safety, refuses cleanup if the old PID may be alive,
+and deletes **only** verified staging files; it leaves all final output
+files intact. It then marks the journal as reviewed, never as reapproved.
+
+The journal itself may contain sensitive **output paths**. Never upload it
+or commit it to Git. Job history isn't a verified receipt. The current
+user and operating system are still responsible for protecting local
+folders; interrupted writes have residual race and crash risks.
+
 
 ## v1.3 — Real per-item polling and cooperative cancel
 
