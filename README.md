@@ -2,7 +2,7 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v0.6.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v0.7.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
 
@@ -44,10 +44,10 @@ GitHub Actions가 Python 3.11·3.13 환경에서 테스트합니다. CLI 스킬 
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v0.6 — AI가 직접 호출하는 로컬 도구
+## MCP v0.7 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
-`prepare_image`, `extract_pdf_pages`, `verify_submission` 등의 10개 도구를
+`prepare_image`, `extract_pdf_pages`, `verify_submission` 등의 12개 도구를
 호출할 수 있습니다. Python 3.11+와 MCP Python SDK v2가 필요합니다.
 
 ```bash
@@ -56,7 +56,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v0.6 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v0.7 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
@@ -123,3 +123,24 @@ v0.4 당시 MCP는 **8개 도구**였습니다. 기존 `main` 웹서비스 배�
   기관에 접수되었거나 서류 내용이 적합하다는 의미가 아닙니다.
 
 기존 웹사이트는 변경하지 않았습니다.
+
+
+### v0.7: 승인 검토 · 실패 수정 가이드 · 최종 제출 체크리스트
+
+새 MCP 도구 `review_submission_plan`은 실제 파일을 만들지 않고
+항목별 경로와 PDF 선택 페이지를 사전 검사합니다. 모호하거나 잘못된
+매칭에 대해서는 원인별 수정 안내를 보여줍니다.
+`awaiting_human_approval`은 **승인이 완료되었다는 뜻이 아닙니다.**
+정확한 작업 계획을 사용자에게 보여준 뒤 별도로 실행 승인을 받아야 합니다.
+
+새 MCP 도구 `verify_submission_package`는 최종 파일을 **다시 열어**
+규격을 검사합니다. 사진 크기나 PDF 용량처럼 기계가 확인할 수 있는
+조건만 검증하며 파일이 중간에 바뀌면 새로운 검사 결과를 반영합니다.
+
+- 준비 전: 공고 원문, 입력·출력 경로, PDF 페이지, 사진 자르기 승인 점검
+- 준비 후: 기술 검증 결과, 항목별 실패 원인과 수정 가이드 제공
+- 접수 전: 사진 내용·PDF 서명·본문·접수 사이트의 완료 여부를 사용자가 확인
+- `technical_pass`는 규격 검사 결과일 뿐 **실제 접수 완료가 아닙니다**
+- 로컬 파일만 처리하며 자동 업로드·신청서 자동 제출은 지원하지 않습니다
+
+기존 웹서비스는 그대로 유지됩니다.
