@@ -407,8 +407,11 @@ Key changes:
 - Real stdio client regression covers discovery, parsing, filename proposals,
   preflight, missing approval, actual file generation, final inspection,
   HTML preview and explicit HTML output approval.
-- CI covers Python 3.11 and 3.13; it checks dependencies, source compilation,
-  all unit/integration tests and the read-only setup doctor.
+- CI covers Ubuntu, macOS and Windows with Python 3.11 and 3.13 (six jobs).
+  It checks dependencies, source compilation, unit/integration tests and the
+  read-only setup doctor. Ubuntu/Python 3.11 additionally creates a **fresh**
+  local virtualenv, installs MCP dependencies and tests a real MCP connection
+  using the generated Codex TOML config.
 
 These tests use **synthetic documents**. A machine-checkable `pass` remains
 separate from content correctness, signature validity, visual requirements
