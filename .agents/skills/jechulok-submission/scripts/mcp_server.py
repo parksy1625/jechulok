@@ -59,8 +59,6 @@ def _confined(path_string: str, *, for_output: bool = False) -> Path:
     # Check the lexical path, not only its resolved target: a symlinked
     # intermediate directory can otherwise bypass the previous check.
     # This also rejects /.. traversal aliases, even if they stay in-bounds.
-    if candidate != resolved:
-        raise ValueError("Path aliases, traversal and symbolic links are not allowed")
     roots = _roots()
     matched = None
     for root in roots:
@@ -72,6 +70,8 @@ def _confined(path_string: str, *, for_output: bool = False) -> Path:
             continue
     if matched is None:
         raise ValueError("File path is outside JECHULOK_ALLOWED_DIRS")
+    if candidate != resolved:
+        raise ValueError("Path aliases, traversal and symbolic links are not allowed")
     current = matched
     for part in resolved.relative_to(matched).parts:
         current = current / part
