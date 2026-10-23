@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v1.9 빠른 시작
+# 제출OK Agent Skill + MCP v2.0 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -287,3 +287,42 @@ python scripts/evaluate_real_v19.py private-evaluation/notices.notice-eval-priva
 실제 공고나 평가 자료를 GitHub 저장소·Actions·공개 이슈에
 업로드하지 마세요. 사람의 비식별화 검수가 필수이며,
 정규표현식 차단만으로 민감정보 누출을 완전히 방지할 수 없습니다.
+
+
+## 13. v2.0 ZIP 배포 · 기존 설치 보존 업데이트
+
+GitHub Actions 실행 결과의 `jechulok-agent-skill-v2.0.0`에서 ZIP과
+SHA-256 파일을 받을 수 있습니다. (최종 태그 기반 GitHub Release가
+실제로 게시된 경우에는 Releases에서도 받을 수 있습니다.)
+신뢰할 수 있는 프로젝트 배포 자료인지 출처를 확인하세요.
+이 체크섬은 **전자서명이 아닙니다**.
+
+기존 로컬 스킬에서 **먼저 쓰기 없는 업데이트 미리보기**를 실행합니다.
+
+```bash
+python scripts/setup_mcp.py upgrade \
+  --allowed-dir "/USER/WORK/FOLDER" \
+  --archive "/DOWNLOAD/jechulok-agent-skill-v2.0.0.zip" \
+  --destination "/NEW/FOLDER/jechulok-skill-v2"
+```
+
+경로를 확인한 다음 같은 명령 끝에 `--execute`를 추가하면
+**존재하지 않는 새 폴더**에만 파일을 풀어 놓습니다.
+기존 가상환경, MCP 클라이언트 설정, 원본 서류는 건드리지 않습니다.
+
+새 폴더로 이동한 뒤 `setup_mcp.py install` → `doctor` →
+`probe` → `config` 순서로 검사하고, 사용자 확인 후
+새 클라이언트 MCP 설정만 직접 병합하세요. 잘못되면 **기존 설치
+경로를 가리키던 설정으로 되돌려** 이전 버전을 유지할 수 있습니다.
+자동 다운로드나 클라이언트 설정 전환을 지원하는 것으로
+오해하지 마세요.
+
+개발·릴리스 검사:
+`python scripts/release_v20.py verify --archive "/DOWNLOAD/...zip"`
+는 읽기 전용입니다. ZIP 생성은 개발 소스에서
+`python scripts/release_v20.py build --output-dir "/EXISTING/DIR"`
+로 할 수 있습니다. 기존 출력 파일은 덮어쓰지 않습니다.
+
+정식 태그 기반 릴리스는 별도 `v2.0.0` Git 태그가 실제로
+푸시된 경우에만 시작됩니다. 현재 Actions 아티팩트의 30일 보관과
+태그 기반 Release 영구 배포는 서로 다릅니다.
