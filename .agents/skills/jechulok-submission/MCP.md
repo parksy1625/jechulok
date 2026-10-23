@@ -1,4 +1,4 @@
-# 제출OK MCP v1.1 — local stdio server
+# 제출OK MCP v1.2 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -454,3 +454,38 @@ client and ask it to call `parse_submission_rules` with synthetic text.
 CI continues to run on Ubuntu/macOS/Windows with Python 3.11/3.13 and
 performs an additional clean virtual environment install + local probe +
 combined status smoke check on Ubuntu/Python 3.11.
+
+
+## v1.2 — JPEG encoding fast path, batch result timing and snapshots
+
+The existing 14 MCP tools and their authorization model remain unchanged.
+Changes are limited to the existing execution outputs and optional offline
+benchmark script:
+
+- `prepare_image` first encodes at quality 95. If it already fits a KB cap,
+  the encoder skips quality-search iterations and returns the verified output.
+  If it exceeds the cap, quality search is performed exactly as before.
+  `encoding_attempts` reports how many JPEG encodes were performed.
+- Individual successful image and PDF operations now return
+  `duration_ms` measured using a monotonic clock.
+- `prepare_submission_batch` results contain `duration_ms` and
+  `progress`: an end-of-request **snapshot** of the number of technically
+  verified items. It is **not** real-time streaming and never counts a
+  rolled-back item as successfully completed. Successful per-item outputs
+  include `duration_ms`.
+- Blocked or failed batch results contain `retry_guidance` with
+  `automatic_retry=false` and `reuse_prior_approval=false`.
+  After fixing the root cause, repeat the dry-run and obtain a separate human
+  approval of exact input/output paths and PDF page ranges.
+- The 50 MiB inspection / 20 MiB PDF extraction safety limits remain; this
+  release does not silently raise them.
+- Run `python scripts/benchmark_v12.py` in the skill directory to evaluate
+  both JPEG paths using an offline synthetic 1200×900 image. The script
+  creates **temporary synthetic files only**, reports encode counts and
+  observed milliseconds and cleans up afterward. A single observation is
+  not a speedup guarantee and varies by hardware and image contents.
+
+The benchmark is also checked in CI on Ubuntu/Python 3.11; other 5 CI
+combinations run the full functional and security regression suite.
+Actual institution acceptance, photo composition and signed PDF semantics
+still require manual review.
