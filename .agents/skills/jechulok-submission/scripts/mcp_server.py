@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v0.5). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v0.6). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -309,6 +309,21 @@ def suggest_submission_files(
     """Suggest local filename/extension candidates for named submission items. READ ONLY, no automatic assignment; inspect and confirm each mapping manually."""
     return _result(lambda: suggest_files(notice_text, directory_path,
                                          confine_directory=_confined_directory))
+
+
+from output_planner import suggest_output_paths
+
+@mcp.tool()
+def suggest_submission_output_paths(
+    notice_text: str,
+    assignments: list[dict[str, Any]],
+    output_directory: str,
+) -> dict[str, Any]:
+    """READ ONLY: propose new non-colliding output filenames for explicitly mapped files, without reserving names or authorizing execution."""
+    return _result(lambda: suggest_output_paths(
+        notice_text, assignments, output_directory,
+        confine=_confined, confine_directory=_confined_directory,
+    ))
 
 
 if __name__ == "__main__":
