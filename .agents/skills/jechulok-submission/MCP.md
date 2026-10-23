@@ -1,4 +1,4 @@
-# 제출OK MCP v1.9 — local stdio server
+# 제출OK MCP v2.0 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -782,3 +782,23 @@ The public CI runs the evaluator against a **small synthetic example
 only**. As no real notice corpus has been collected here, this release
 reports no measured real-world accuracy. Full format and consent/label
 protocol are documented in REAL_EVALUATION.md.
+
+
+## v2.0 — Packaging and safe local upgrade (no added MCP tools)
+
+The **20 existing MCP tools** and their default read-only behavior are
+unchanged. Versioned distribution uses an offline ZIP containing the skill,
+the MCP server scripts, docs, and a file-level SHA-256 manifest. CI tests the
+packaged server with a real MCP stdio handshake. A separate whole ZIP
+checksum file is provided. No automatic downloads, auto-updates or
+remote MCP endpoints are added.
+
+The CLI `scripts/setup_mcp.py upgrade` previews and validates an offline
+release archive, defaulting to no filesystem mutations. The `--execute`
+flag creates only a new folder, leaving the current venv/client settings
+untouched. The new installation still needs a separately approved
+dependency install and explicit MCP client config update.
+
+See RELEASE_NOTES_v2.md for commands and limitations, including the
+unsigned archive, version-ranged dependencies, and advisory nature of
+checksums. This package is **not** independently security audited.
