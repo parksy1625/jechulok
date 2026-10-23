@@ -1,4 +1,4 @@
-# 제출OK MCP v1.8 — local stdio server
+# 제출OK MCP v1.9 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -759,3 +759,26 @@ and real_user_satisfaction to null. This test cannot estimate them, and
 the grouped-question count is not an empirical user-session measurement.
 Do not overstate the 100 synthetic outcomes as a percentage of real
 institutions that will accept uploads. See EVALUATION.md.
+
+
+## v1.9 — Real-notice evaluation readiness, no new MCP permissions
+
+The MCP tool count remains **20**, unchanged. A separate local CLI,
+`scripts/evaluate_real_v19.py`, evaluates a privately stored corpus
+of **independently human-labelled** and legally reusable technical notice
+snippets. Corpus data, reviewer IDs and notice texts are not transmitted
+to the MCP server or GitHub CI. The CLI prints only aggregate counts,
+rates and generalized error classifications.
+
+Require two distinct human reviewers per notice; disagreements require
+third-person adjudication and are excluded until resolved. The report
+includes agreement, rule-value precision/recall, omission rate, wrong-rule
+rate, exact matches, unsafe ambiguity acceptance and false blocking.
+Zero-denominator rates appear as null. Privacy/rights attestation and
+common personal-identifier pattern checks are mandatory but cannot
+guarantee anonymity or permission to reuse.
+
+The public CI runs the evaluator against a **small synthetic example
+only**. As no real notice corpus has been collected here, this release
+reports no measured real-world accuracy. Full format and consent/label
+protocol are documented in REAL_EVALUATION.md.
