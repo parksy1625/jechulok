@@ -67,6 +67,33 @@ jobs:
           path: ${{ runner.temp }}/jechulok-eval-v18.json
           if-no-files-found: error
           retention-days: 30
+      - name: v1.9 independent-label evaluator public synthetic example (Linux 3.11)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        working-directory: .agents/skills/jechulok-submission
+        shell: bash
+        run: |
+          python scripts/evaluate_real_v19.py tests/fixtures/v19_example_synthetic.jsonl --strict > "$RUNNER_TEMP/jechulok-eval-v19-example.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-eval-v19-example.json").read_text())
+          assert data["status"] == "evaluated", data
+          assert data["dataset_type"] == "user_provided_reviewed_notices"
+          assert data["cases_total"] == 4
+          assert data["unresolved_cases"] == 0
+          assert data["metrics"]["field_value_recall"] == 1.0
+          assert data["metrics"]["unsafe_accept_rate"] == 0
+          assert "notices" not in data
+          print("Local evaluation engine synthetic example smoke OK")
+          PY
+      - name: Upload v1.9 PUBLIC SYNTHETIC sample report only
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-v19-example-synthetic-only
+          path: ${{ runner.temp }}/jechulok-eval-v19-example.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Offline synthetic image benchmark smoke check (Linux 3.11)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         working-directory: .agents/skills/jechulok-submission
