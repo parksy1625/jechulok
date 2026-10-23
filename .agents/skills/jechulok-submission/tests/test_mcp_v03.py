@@ -91,7 +91,7 @@ class V03Tools(unittest.IsolatedAsyncioTestCase):
         options=StdioServerParameters(command=sys.executable,args=[str(ROOT/"scripts"/"mcp_server.py")],env={"JECHULOK_ALLOWED_DIRS":str(self.folder)})
         async with Client(options) as client:
             tools=await client.list_tools()
-            self.assertEqual(len(tools.tools),14)
+            self.assertEqual(len(tools.tools),17)
             r=await client.call_tool("parse_submission_rules",{"requirements_text":"PDF 5MB 이하, 최대 3페이지"})
             self.assertFalse(r.is_error)
             self.assertEqual(r.structured_content["rules"]["max_pages"],3)
