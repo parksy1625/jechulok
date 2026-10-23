@@ -1,0 +1,4 @@
+# Local Python/MCP runtime: never commit installed dependencies or cache
+.agents/skills/jechulok-submission/.venv/
+.agents/skills/jechulok-submission/**/__pycache__/
+.agents/skills/jechulok-submission/**/*.pyc
