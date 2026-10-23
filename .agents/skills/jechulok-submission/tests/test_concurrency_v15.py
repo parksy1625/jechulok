@@ -199,6 +199,13 @@ class MultiProcessLockTests(unittest.TestCase):
             confirm_execution=True, confine=server._confined,
         )
         self.assertIn(again["status"], {"queued", "running", "completed"}, again)
+        # Test cleanup must never race a still-running writer, especially on
+        # Windows where opening lock files prevents directory removal.
+        until = time.monotonic() + 12
+        while another.get(again["job_id"])["status"] not in background_jobs.FINAL:
+            self.assertLess(time.monotonic(), until, "second worker did not terminate")
+            time.sleep(.025)
+        self.assertEqual(another.get(again["job_id"])["status"], "completed")
 
     def test_review_is_refreshed_and_excludes_this_process_active_work(self):
         owner = background_jobs.LocalJobManager(journal_root=self.journal_dir)
