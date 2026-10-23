@@ -262,6 +262,26 @@ def prepare_from_requirements(
                 "limitations": "기술 조건만 검증합니다. 사진 구도·내용·기관 접수는 수동 확인이 필요합니다."}
     return _result(perform)
 
+from notice_batch import analyze_notice, prepare_batch
+
+@mcp.tool()
+def analyze_submission_notice(notice_text: str) -> dict[str, Any]:
+    """Parse a long Korean notice into explicitly named per-file requirements. Ambiguous/shared rules block automation. Never modifies files."""
+    return _result(lambda: analyze_notice(notice_text))
+
+
+@mcp.tool()
+def prepare_submission_batch(
+    notice_text: str,
+    assignments: list[dict[str, Any]],
+    execute: bool = False,
+    confirm_execution: bool = False,
+) -> dict[str, Any]:
+    """Preflight all explicit item_id/file mappings. Dry run by default; actual writes need execute=true and confirm_execution=true. Never guess page ranges or overwrite files."""
+    return _result(lambda: prepare_batch(notice_text, assignments, execute=execute,
+                                         confirm_execution=confirm_execution, confine=_confined))
+
+
 if __name__ == "__main__":
     # Local stdio only. Do not expose arbitrary user files via an unauthenticated HTTP endpoint.
     mcp.run(transport="stdio")
