@@ -106,7 +106,7 @@ class CandidateTests(unittest.IsolatedAsyncioTestCase):
         async with Client(server.mcp) as client:
             listing = await client.list_tools()
             names = {tool.name for tool in listing.tools}
-            self.assertEqual(len(names), 14)
+            self.assertEqual(len(names), 17)
             self.assertIn("suggest_submission_files", names)
             response = await client.call_tool(
                 "suggest_submission_files",
