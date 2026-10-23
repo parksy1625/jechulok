@@ -67,7 +67,7 @@ class DurableRecoveryV14Tests(unittest.TestCase):
             time.sleep(.025)
         self.fail("Job did not become terminal")
 
-    def _seed_interrupted(self, *, pid=-1, stage_exists=True, existing_output=False):
+    def _seed_interrupted(self, *, pid=999999999, stage_exists=True, existing_output=False):
         job_id = "TESTjobSafeRecovery_01234"
         stage = job_journal.stage_for_output(self.ready, job_id, "item_01")
         if stage_exists:
@@ -157,6 +157,15 @@ class DurableRecoveryV14Tests(unittest.TestCase):
         self.assertEqual(new_server.review_recovery()["status"], "clear")
         self.assertEqual(job_journal.JobJournal(self.state).read(job_id)["status"], "reviewed")
         self.assertFalse(result["reusable_approval"])
+
+    def test_recovered_job_blocks_new_approved_execution(self):
+        job_id, stage = self._seed_interrupted()
+        restarted = background_jobs.LocalJobManager(journal_root=self.state)
+        blocked = self._start(manager=restarted)
+        self.assertEqual(blocked["status"], "recovery_required")
+        self.assertFalse(self.ready.exists())
+        self.assertFalse(self.ready_pdf.exists())
+        self.assertTrue(stage.exists())
 
     def test_alive_owner_refuses_deletion(self):
         job_id, stage = self._seed_interrupted(pid=os.getpid())
