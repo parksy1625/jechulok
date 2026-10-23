@@ -5,10 +5,33 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.9.0"
+  version: "2.0.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.0 — Tested portable ZIP and opt-in side-by-side upgrade
+
+The skill version is now 2.0.0, but all **20 existing local MCP tools** retain
+their names and authorizations. `scripts/release_v20.py` builds a portable
+source ZIP plus SHA-256 sidecar and independently checks each release member
+against the bundled manifest. The ZIP excludes tests, private evaluation
+corpora, generated files and local runtime virtual environments.
+
+Use `python scripts/setup_mcp.py upgrade --allowed-dir WORK_DIR --archive
+LOCAL_ZIP --destination NEW_FOLDER` to **preview**. Only a separate command
+with `--execute` extracts to a new, not-yet-existing folder. The running
+MCP server, previous installation, dependency environment and client config
+are never silently replaced. The user must explicitly run the new folder's
+install, doctor, probe and copy the newly generated config to switch.
+
+A CI job checks that the extracted archive starts a real 20-tool MCP stdio
+server. A v2.0.0 tag-triggered workflow is **configured** to run a release
+gate and publish archives; it does not publish anything until that Git
+tag is intentionally created. Checksums are NOT publisher signatures.
+No third-party security audit or real-user acceptance study is implied.
+Read RELEASE_NOTES_v2.md and SECURITY.md before external deployment.
+
 
 ## v1.9 — Local real-notice evaluation framework, never fabricated results
 
