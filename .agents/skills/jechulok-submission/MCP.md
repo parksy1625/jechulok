@@ -1,4 +1,4 @@
-# 제출OK MCP v0.5 — local stdio server
+# 제출OK MCP v0.6 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -42,6 +42,7 @@ Important: The default allowed directory is the MCP process's working directory,
 | `analyze_submission_notice` | Split explicit named file items and keep their source-line evidence | No |
 | `prepare_submission_batch` | Preflight explicit item-to-file mappings and optionally process with double confirmation | Only with execution approval |
 | `suggest_submission_files` | Read-only hints based on local filenames and compatible extensions, never auto-assigns | No |
+| `suggest_submission_output_paths` | Suggest collision-free output filenames for explicitly reviewed mappings | No |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -164,3 +165,48 @@ After `analyze_submission_notice`, call `suggest_submission_files` with an
 
 The MCP server does not upload documents, scan recursively, submit forms, or
 infer successful acceptance.
+
+
+## v0.6 — Output-name proposals and technical progress
+
+After the user confirms the item-to-input mappings, call
+`suggest_submission_output_paths` with their original notice, reviewed file
+paths, and an existing authorized output directory:
+
+```json
+{
+  "notice_text": "- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지",
+  "assignments": [
+    {"item_id":"item_01","input_path":"/workspace/photo.png"},
+    {"item_id":"item_02","input_path":"/workspace/resume.pdf","pages_to_extract":"1-3"}
+  ],
+  "output_directory":"/workspace/ready"
+}
+```
+
+This call **does not create or reserve any files**. It uses fixed category-based
+names such as `제출용_증명사진.jpg` and `제출용_이력서.pdf` and appends
+`_2`, `_3`, etc. when names already exist. These are only suggestions; a
+different process may create the same name before execution.
+
+A PDF already satisfying explicitly stated conditions is labeled
+`verify_existing` and receives no output filename. A PDF that fails but has
+no user-selected page range is labeled `select_pdf_pages` and blocks
+preparation until the user selects pages. It never infers discarded pages.
+
+**Next steps:** Let the user inspect each proposed path and choose/approve it.
+Copy the explicitly approved paths into `prepare_submission_batch`. Call the
+batch tool once with default `execute=false` to review the actual plan.
+Only after explicit approval of this exact dry run use both
+`execute=true` and `confirm_execution=true` to write files.
+
+The batch result now includes `summary` with:
+- `technically_verified`: successful machine checks, *not submission success*
+- `generated_files` / `unchanged_verified`: successful new outputs vs.
+  verification of original PDFs
+- `not_verified`, `blocked_items`, and per-item `technical_status`
+- `manual_review_required=true` and
+  `institutional_submission_confirmed=false` unconditionally
+
+Statuses `planned`, `awaiting_confirmation`, `blocked`,
+`rolled_back`, and `not_executed` are not success. All files stay local.
