@@ -1,4 +1,4 @@
-"""JeChulOK v0.4: deterministic multi-document notice parsing and safe batch planning.
+"""JeChulOK v0.6: deterministic multi-document notice parsing and safe batch planning.
 
 No LLM, network or OCR. Explicit named line items only; unassigned constraints
 and ambiguous conditions block all automated batch processing.
@@ -93,7 +93,7 @@ def analyze_notice(notice_text: str) -> dict[str, Any]:
     }
 
 
-def prepare_batch(
+def _prepare_batch_internal(
     notice_text: str,
     assignments: list[dict[str, Any]],
     *,
@@ -252,3 +252,78 @@ def prepare_batch(
                 "reason": str(exc)[:300], "rolled_back": [str(x) for x in created], "results": []}
     return {"status": "pass", "dry_run": False, "results": outcomes,
             "limitations": "명시된 형식·픽셀·용량·페이지 수만 검증합니다. 문서 내용과 실제 접수는 확인하지 못합니다."}
+
+
+
+def _attach_batch_summary(notice_text: str, result: dict[str, Any]) -> dict[str, Any]:
+    """Present item-by-item progress without claiming real-world submission."""
+    notice = result.get("notice") or analyze_notice(notice_text)
+    items = notice["items"]
+    status = result["status"]
+    outcome_by_id = {entry["item_id"]: entry for entry in result.get("results", [])}
+    plans_by_id = {entry["item_id"]: entry for entry in result.get("plan", [])}
+    blocked = {entry["item_id"] for entry in result.get("blocked", [])}
+    blocked_all = "batch" in blocked or notice["status"] != "parsed"
+    rolled_back = set(result.get("rolled_back", []))
+    statuses: list[dict[str, Any]] = []
+
+    for item in items:
+        item_id = item["item_id"]
+        finished = outcome_by_id.get(item_id)
+        plan = plans_by_id.get(item_id, {})
+        if status == "pass" and finished and finished["status"] == "pass":
+            technical_status = "verified"
+        elif status == "error" and any(
+            p["item_id"] == item_id and p.get("output_path") in rolled_back
+            for p in result.get("plan", [])
+        ):
+            technical_status = "rolled_back"
+        elif blocked_all or item_id in blocked:
+            technical_status = "blocked"
+        elif status == "planned":
+            technical_status = "planned"
+        elif status == "needs_confirmation":
+            technical_status = "awaiting_confirmation"
+        else:
+            technical_status = "not_executed"
+        statuses.append({
+            "item_id": item_id, "label": item["label"],
+            "technical_status": technical_status,
+            "action": (finished or plan).get("action"),
+            "output_path": (finished or {}).get("output"),
+            "manual_content_review_required": True,
+        })
+
+    verified = [entry for entry in result.get("results", []) if entry.get("status") == "pass"]
+    result["summary"] = {
+        "total_items": len(items),
+        "technically_verified": len(verified) if status == "pass" else 0,
+        "generated_files": sum(
+            1 for entry in verified if entry.get("output") is not None
+        ) if status == "pass" else 0,
+        "unchanged_verified": sum(
+            1 for entry in verified if entry.get("action") == "verify_existing"
+        ) if status == "pass" else 0,
+        "blocked_items": sum(1 for entry in statuses if entry["technical_status"] == "blocked"),
+        "not_verified": len(items) - (len(verified) if status == "pass" else 0),
+        "manual_review_required": True,
+        "institutional_submission_confirmed": False,
+        "items": statuses,
+    }
+    return result
+
+
+def prepare_batch(
+    notice_text: str,
+    assignments: list[dict[str, Any]],
+    *,
+    execute: bool = False,
+    confirm_execution: bool = False,
+    confine: Callable[..., Path],
+) -> dict[str, Any]:
+    """v0.4 compatible API plus a truthful v0.6 technical progress summary."""
+    result = _prepare_batch_internal(
+        notice_text, assignments, execute=execute,
+        confirm_execution=confirm_execution, confine=confine,
+    )
+    return _attach_batch_summary(notice_text, result)
