@@ -102,7 +102,7 @@ jobs:
               )) as client:
                   tools = await client.list_tools()
                   names = {tool.name for tool in tools.tools}
-                  assert len(names) == 17, names
+                  assert len(names) == 19, names
                   assert "verify_submission_package" in names
           asyncio.run(verify())
           print("Fresh isolated install, config, and MCP connection OK")
