@@ -21,6 +21,7 @@ class SyntheticGuidanceEvaluationTests(unittest.TestCase):
         report = evaluate()
         self.assertEqual(report["evaluated_cases"], 100, report["failures"])
         self.assertEqual(report["expected_cases"], 100)
+        self.assertEqual(report["distinct_synthetic_notices"], 100)
         self.assertEqual(set(report["families"]), set(FAMILIES))
         self.assertTrue(all(r["total"] == 25 for r in report["families"].values()))
         self.assertEqual(report["status"], "pass", report["failures"])
