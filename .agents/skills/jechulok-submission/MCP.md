@@ -1,4 +1,4 @@
-# 제출OK MCP v0.4 — local stdio server
+# 제출OK MCP v0.5 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -41,6 +41,7 @@ Important: The default allowed directory is the MCP process's working directory,
 | `prepare_from_requirements` | Prepare a JPG or explicit PDF pages and reverify technical output | Creates a new file |
 | `analyze_submission_notice` | Split explicit named file items and keep their source-line evidence | No |
 | `prepare_submission_batch` | Preflight explicit item-to-file mappings and optionally process with double confirmation | Only with execution approval |
+| `suggest_submission_files` | Read-only hints based on local filenames and compatible extensions, never auto-assigns | No |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -133,3 +134,33 @@ CLI (analysis only):
 python scripts/jechulok.py parse-notice --text $'- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지'
 ```
 
+
+
+## v0.5 — Read-only local file suggestions
+
+After `analyze_submission_notice`, call `suggest_submission_files` with an
+**explicitly authorized directory** and the original notice:
+
+```json
+{
+  "notice_text": "- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지",
+  "directory_path": "/workspace/submission"
+}
+```
+
+- Only the top-level files inside the requested directory are considered (no recursion).
+- At most 250 immediate directory entries are inspected, and the top five
+  compatible filenames are shown per notice item. `truncated=true` means
+  additional files may exist outside the inspected set.
+- Matching uses **filenames and extensions only**, not file content, OCR or
+  machine learning. A filename hint is never proof that a file is the right document.
+- Files and subdirectories accessed through symlinks are rejected or skipped.
+  The directory must be within `JECHULOK_ALLOWED_DIRS`.
+- The result is `suggestions_only`, `no_candidates` or `needs_review`;
+  none authorizes writing a file. Review even high-priority hints manually.
+- Only after reviewing the paths and item IDs, explicitly pass assignments
+  to `prepare_submission_batch`. First obtain its dry-run plan, and execute
+  only after approval with both execution flags. Page selection remains manual.
+
+The MCP server does not upload documents, scan recursively, submit forms, or
+infer successful acceptance.
