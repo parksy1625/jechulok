@@ -32,7 +32,7 @@ class ProbeTests(unittest.TestCase):
         result = setup_mcp.probe_connection(self.root, Path(sys.executable))
         self.assertEqual(result["status"], "pass", result)
         self.assertEqual(result["code"], "mcp_handshake_ok")
-        self.assertEqual(result["tool_count"], 14)
+        self.assertEqual(result["tool_count"], 17)
         self.assertFalse(result["client_config_modified"])
         self.assertEqual(result["files_processed"], 0)
         self.assertEqual(before, set(self.root.iterdir()))
@@ -128,7 +128,7 @@ class ProbeTests(unittest.TestCase):
                 "status": "pass", "checks": [],
             }),
             patch.object(setup_mcp, "probe_connection", return_value={
-                "status": "pass", "tool_count": 14,
+                "status": "pass", "tool_count": 17,
             }) as probed,
             contextlib.redirect_stdout(io.StringIO()) as out,
         ):
@@ -136,7 +136,7 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         data = json.loads(out.getvalue())
         self.assertEqual(data["status"], "pass")
-        self.assertEqual(data["connection"]["tool_count"], 14)
+        self.assertEqual(data["connection"]["tool_count"], 17)
         self.assertFalse(data["client_config_modified"])
         probed.assert_called_once()
 
