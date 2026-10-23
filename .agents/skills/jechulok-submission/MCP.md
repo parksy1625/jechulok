@@ -1,4 +1,4 @@
-# 제출OK MCP v1.5 — local stdio server
+# 제출OK MCP v1.6 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -52,6 +52,7 @@ Important: The default allowed directory is the MCP process's working directory,
 | `cancel_submission_job` | Request cooperative cancellation and batch rollback | No |
 | `list_interrupted_submission_jobs` | Read-only recovery preview after restart | No |
 | `resolve_interrupted_submission_job` | Preview or explicitly remove only orphaned journal-owned temporary files | Three explicit confirmations |
+| `assist_submission` | Five-step guided next action, safe plan approval, job tracking and final check | `action=start` only with explicit double approval and exact-plan fingerprint |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -630,3 +631,58 @@ different journal roots, remote machines, uncooperative programs or
 legacy versions. It does not turn multiple-file output publishing
 into a fully atomic transaction. Keep sensitive work directories
 private and manually inspect leftover final files after crashes.
+
+
+## v1.6 — 한 개의 MCP 도구로 단계별 서류 준비 안내
+
+총 **20개 MCP 도구**를 제공합니다. 기존 19개 API는 유지되고,
+새로운 `assist_submission`은 기존 검증·작업 관리 기능을
+하나의 대화형 진입점으로 연결합니다.
+
+| 단계 | 호출 | 반환하는 사용자 안내 |
+|---|---|---|
+| 1. 공고 확인 | `assist_submission()` 또는 `action="next"` | 공고 원문이 없거나 모호한 조건의 확인 질문 |
+| 2. 원본 선택 | `action="next", notice_text="..."` | 제출 항목별 원본 파일 지정 요청 |
+| 3. 계획 미리보기 | `action="next", notice_text="...", assignments=[...]` | 입력·출력 경로, PDF 페이지, 자르기 조건, `approval_fingerprint` |
+| 4. 사용자 승인 후 실행 | `action="start"` | 실행 승인 플래그 2개 + 동일 `approval_fingerprint` 확인 후 `job_id` |
+| 5. 검증 및 접수 | `action="status", job_id="..."` 이후 `action="verify", notice_text="...", final_files=[...]` | 기술 검증 결과 + 직접 확인할 사항 |
+
+실행 요청의 구조는 다음과 같습니다.
+
+```json
+{
+  "action": "start",
+  "notice_text": "- 증명사진: JPG 300×400px 500KB 이하",
+  "assignments": [
+    {
+      "item_id": "item_01",
+      "input_path": "/allowed/photo.png",
+      "output_path": "/allowed/ready.jpg"
+    }
+  ],
+  "approval_fingerprint": "<preview에서 받은 64자리 SHA-256>",
+  "execute": true,
+  "confirm_execution": true
+}
+```
+
+`action=next`는 읽기만 수행합니다. `start` 호출도 두 실행
+플래그가 모두 true이고, **현재 검증 계획과 해시가 정확히 일치해야**
+작업을 시작할 수 있습니다. 최종 비교는 작업 폴더 OS 잠금을
+확보한 **후**에도 수행됩니다. 계획이 달라지면 `plan_changed`를
+반환하고 새 미리보기와 사용자 승인을 요청합니다.
+
+이 해시는 승인 문서 내용의 디지털 서명이나 파일 원본의 해시가
+아닙니다. 두 불리언 역시 실제 인간의 승인 여부를 검증하지
+못하므로, AI 클라이언트는 반드시 사용자가 **정확한 계획을
+확인하고 승인했을 때만** 전송해야 합니다.
+
+`status`는 기존 비동기 작업을 폴링하고 `cancel`은 취소 요청만
+제출합니다. `verify`는 사용자가 지정한 최종 파일을 다시 확인하며
+기술 규격만 검사합니다. 서명·사진 구도·본문의 정확성·실제 제출
+완료는 자동 검증되지 않습니다. AI는 제출처 업로드나 접수 완료를
+주장해서는 안 됩니다.
+
+이 안내 도구 자체에는 세션 저장소가 없으며, 공고 텍스트도
+디스크에 추가 기록하지 않습니다. 사용자 데이터는 기존
+`JECHULOK_ALLOWED_DIRS`와 작업별 보호를 따릅니다.
