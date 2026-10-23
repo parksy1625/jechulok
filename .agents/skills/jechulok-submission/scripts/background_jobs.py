@@ -136,67 +136,57 @@ class LocalJobManager:
             if any(j["status"] in ACTIVE for j in self._jobs.values()):
                 return {"status": "busy", "message": "이미 실행 중인 일괄 작업이 있습니다."}
             lease = None
-            if self._journal is not None:
-                lease = FolderWriteLock.acquire(self._journal)
-                if lease is None:
-                    return {
-                        "status": "busy", "code": "folder_writer_active",
-                        "message": "동일 작업 폴더에서 다른 MCP 프로세스가 작업 중입니다.",
-                        "job_started": False,
-                    }
-                self._active_lease = lease
-                try:
-                    self._refresh_recovered()
-                except BaseException:
-                    lease.release()
-                    self._active_lease = None
-                    raise
-            if self._has_unresolved_recovery():
-                if lease is not None:
-                    lease.release()
-                    self._active_lease = None
-                return {
-                    "status": "recovery_required",
-                    "message": "이전에 중단된 작업의 출력을 확인하고 복구 결정을 마친 뒤 새 작업을 시작하세요.",
-                    "job_started": False, "reusable_approval": False,
-                    "pending_job_count": sum(r["status"] in ACTIVE for r in self._recovered.values()),
-                }
-            if any(j["status"] in ACTIVE for j in self._jobs.values()):
-                return {"status": "busy", "message": "이미 실행 중인 일괄 작업이 있습니다."}
-            if len(self._jobs) >= MAX_HISTORY:
-                for key in list(self._jobs):
-                    if self._jobs[key]["status"] in FINAL:
-                        del self._jobs[key]
-                        break
-            if len(self._jobs) >= MAX_HISTORY:
-                if lease is not None:
-                    lease.release()
-                    self._active_lease = None
-                return {"status": "busy", "message": "최근 작업 기록 공간이 가득 찼습니다."}
-            job_id = token_urlsafe(18)
-            staging: list[dict[str, str]] = []
-            if self._journal is not None:
-                for plan in preview["plan"]:
-                    final = plan.get("output_path")
-                    if final:
-                        target = Path(final)
-                        staged = stage_for_output(target, job_id, plan["item_id"])
-                        # Make sure staging stays inside the same approved
-                        # directory and cannot overwrite any existing file.
-                        confine(str(staged), for_output=True)
-                        staging.append({
-                            "item_id": plan["item_id"],
-                            "stage": str(staged), "final": str(target),
-                        })
-            job: dict[str, Any] = {
-                "id": job_id, "status": "queued",
-                "total": len(preview["plan"]), "completed": 0,
-                "current_item": None, "events": [], "result": None,
-                "cancel": Event(), "staging": staging,
-                "outputs": [p["output_path"] for p in preview["plan"] if p.get("output_path")],
-            }
-            # Keep the OS lease until _work finishes, including rollback.
             try:
+                if self._journal is not None:
+                    lease = FolderWriteLock.acquire(self._journal)
+                    if lease is None:
+                        return {
+                            "status": "busy", "code": "folder_writer_active",
+                            "message": "동일 작업 폴더에서 다른 MCP 프로세스가 작업 중입니다.",
+                            "job_started": False,
+                        }
+                    # The OS lock is held across this scan AND all writes.
+                    self._refresh_recovered()
+                if self._has_unresolved_recovery():
+                    return {
+                        "status": "recovery_required",
+                        "message": "이전에 중단된 작업의 출력을 확인하고 복구 결정을 마친 뒤 새 작업을 시작하세요.",
+                        "job_started": False, "reusable_approval": False,
+                        "pending_job_count": sum(
+                            r["status"] in ACTIVE for r in self._recovered.values()
+                        ),
+                    }
+                if len(self._jobs) >= MAX_HISTORY:
+                    for key in list(self._jobs):
+                        if self._jobs[key]["status"] in FINAL:
+                            del self._jobs[key]
+                            break
+                if len(self._jobs) >= MAX_HISTORY:
+                    return {"status": "busy", "message": "최근 작업 기록 공간이 가득 찼습니다."}
+                job_id = token_urlsafe(18)
+                staging: list[dict[str, str]] = []
+                if self._journal is not None:
+                    for plan in preview["plan"]:
+                        final = plan.get("output_path")
+                        if final:
+                            target = Path(final)
+                            staged = stage_for_output(target, job_id, plan["item_id"])
+                            confine(str(staged), for_output=True)
+                            staging.append({
+                                "item_id": plan["item_id"],
+                                "stage": str(staged), "final": str(target),
+                            })
+                job: dict[str, Any] = {
+                    "id": job_id, "status": "queued",
+                    "total": len(preview["plan"]), "completed": 0,
+                    "current_item": None, "events": [], "result": None,
+                    "cancel": Event(), "staging": staging,
+                    "outputs": [
+                        p["output_path"] for p in preview["plan"]
+                        if p.get("output_path")
+                    ],
+                }
+                # The durable journal must be written BEFORE the worker starts.
                 self._persist(job)
                 self._jobs[job_id] = job
                 worker = Thread(
@@ -204,14 +194,21 @@ class LocalJobManager:
                     args=(job_id, notice_text, deepcopy(assignments), confine),
                     name="jechulok-job-" + job_id[:6], daemon=True,
                 )
-                worker.start()
-            except BaseException:
-                self._jobs.pop(job_id, None)
+                self._active_lease = lease
+                try:
+                    worker.start()
+                except BaseException:
+                    self._jobs.pop(job_id, None)
+                    self._active_lease = None
+                    raise
+                lease = None  # Ownership moved to _work's finally block.
+                return self._view(job)
+            finally:
+                # Preflight/recovery refusals and thread startup failures
+                # release immediately; they never strand a writer lease.
                 if lease is not None:
                     lease.release()
-                    self._active_lease = None
-                raise
-            return self._view(job)
+
 
     def _cleanup_stages(self, staging: list[dict[str, str]]) -> None:
         # Staging paths are random and exclusive; never delete a final path.
