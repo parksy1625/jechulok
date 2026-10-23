@@ -191,7 +191,7 @@ class V08Tests(unittest.IsolatedAsyncioTestCase):
         async with Client(server.mcp) as client:
             listing = await client.list_tools()
             names = {x.name for x in listing.tools}
-            self.assertEqual(len(names), 14)
+            self.assertEqual(len(names), 17)
             self.assertIn("guide_submission_workflow", names)
             self.assertIn("create_submission_html_report", names)
             response = await client.call_tool("guide_submission_workflow", {
@@ -215,7 +215,7 @@ class V08Tests(unittest.IsolatedAsyncioTestCase):
         )
         async with Client(params) as client:
             names = {x.name for x in (await client.list_tools()).tools}
-            self.assertEqual(len(names), 14)
+            self.assertEqual(len(names), 17)
             self.assertIn("create_submission_html_report", names)
 
 
