@@ -52,7 +52,7 @@ def _canonical(assessment: dict[str, Any]) -> tuple[Any, ...]:
     _require(type(reviewer) is str and bool(re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_-]{0,31}", reviewer)),
              "Reviewer must have a pseudonymous ID")
     decision = assessment["decision"]
-    _require(decision in REVIEW_DECISIONS, "Unknown human decision")
+    _require(type(decision) is str and decision in REVIEW_DECISIONS, "Unknown human decision")
     items = assessment["items"]
     _require(type(items) is list and len(items) <= 12, "Invalid human item list")
     if decision == "needs_review":
@@ -77,7 +77,8 @@ def _canonical(assessment: dict[str, Any]) -> tuple[Any, ...]:
                 continue
             val = rules[key]
             if key == "expected_format":
-                _require(val in {"jpg", "pdf", "png", "webp"}, "Unknown expected format")
+                _require(type(val) is str and val in {"jpg", "pdf", "png", "webp"},
+                         "Unknown expected format")
             else:
                 _require(type(val) is int and 1 <= val <= 51200
                          if key == "max_kb" else
@@ -116,6 +117,8 @@ def _load(path: Path) -> list[dict[str, Any]]:
     if not path.is_file() or path.is_symlink() or path.stat().st_size > MAX_BYTES:
         raise InvalidCorpus("Missing, linked or oversized local corpus")
     data = path.read_bytes()
+    if len(data) > MAX_BYTES:
+        raise InvalidCorpus("Corpus size changed or exceeds allowed limit")
     try:
         text = data.decode("utf-8-sig")
     except UnicodeError:
@@ -148,6 +151,7 @@ def _load(path: Path) -> list[dict[str, Any]]:
         _require(digest not in hashes, f"Duplicate notice at line {num}")
         hashes.add(digest)
         _require(type(doc["rights"]) is dict and set(doc["rights"]) == {"basis", "confirmed"}
+                 and type(doc["rights"]["basis"]) is str
                  and doc["rights"]["basis"] in RIGHTS and doc["rights"]["confirmed"] is True,
                  f"Missing documented reuse authorization at line {num}")
         _require(doc["privacy_reviewed"] is True,
