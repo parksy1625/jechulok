@@ -5,10 +5,46 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v1.3 — Real per-item polling and cooperative cancel
+
+The local stdio MCP server now exposes **17 tools**. For a long-running batch,
+call `start_submission_job(notice_text, assignments, execute=false,
+confirm_execution=false)` to perform an ordinary **read-only dry run**. It
+starts no background job by default and shows the exact paths, PDF pages and
+crop choice. After the user explicitly approves that specific plan, call with
+**both** `execute=true` and `confirm_execution=true` to start a worker.
+
+The response includes a random `job_id`. Call
+`get_submission_job(job_id)` to poll the *real, current* per-item state.
+This is **polling**, not server-push subscriptions or streaming from a
+single blocking tool. At most **one batch job** can execute at once in the
+local MCP process.
+
+Call `cancel_submission_job(job_id)` to *request* cancellation. The worker
+is not forcibly interrupted while processing an individual image/PDF; it
+honors the flag at safe item boundaries, then removes **new files created
+by the current batch**. Poll until the terminal state is `cancelled`,
+`failed` or `completed`; `cancel_requested` alone is not final.
+The original inputs remain untouched. Previously existing outputs are never
+overwritten.
+
+**Safety boundaries:** job state is in-memory and exists only in the currently
+running MCP server process. If the process exits/crashes, job state and
+cancel controls are lost and the user must manually inspect the local folder
+before retrying. The worker is not a preemptive OS sandbox. Approval flags
+cannot cryptographically prove human consent; the agent must obtain real
+user permission. Restarting or retrying a completed/cancelled job never
+reuses the old approval or automatically re-runs an operation.
+
+Use `prepare_submission_batch` for traditional synchronous execution when
+polling/cancellation is unnecessary. Only the local Skill/MCP implementation
+is affected; no institutional upload is implemented.
+
 
 ## v1.2: Fast JPEG pass, timing and safe retry
 
