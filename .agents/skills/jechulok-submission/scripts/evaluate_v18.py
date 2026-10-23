@@ -38,6 +38,8 @@ def evaluate() -> dict[str, Any]:
         "uploads_performed": False, "execution_approvals_granted": False,
     }
 
+    notice_variants: set[str] = set()
+
     def assess(family: str, case: str, passed: bool, reason: str) -> None:
         metric = result["families"][family]
         metric["total"] += 1
@@ -60,6 +62,7 @@ def evaluate() -> dict[str, Any]:
              [("jpg", kb, w, h, None), ("pdf", mb * 1024, None, None, pages)]),
         )
         for j, (text, expected) in enumerate(cases):
+            notice_variants.add(text)
             parsed = analyze_notice(text)
             got = [tuple(entry["parsed"]["rules"][key] for key in
                          ("expected_format", "max_kb", "width", "height", "max_pages"))
@@ -81,6 +84,7 @@ def evaluate() -> dict[str, Any]:
              "uncertain_document_rule"),
         )
         for j, (text, code) in enumerate(variants):
+            notice_variants.add(text)
             parsed = analyze_notice(text)
             issues = notice_issues(text)
             assess(
@@ -132,8 +136,15 @@ def evaluate() -> dict[str, Any]:
                     ({"notice_text": notice}, 2, False),
                 )
                 for j, (kwargs, count, scanned) in enumerate(variants):
+                    # Separate explicit rule values distinguish all 25
+                    # notices while preserving the expected choice action.
+                    scenario_notice = (
+                        f"- 증명사진: JPG 300×400px {500 + i * 20}KB 이하\n"
+                        f"- 이력서: PDF {3 + j}MB 이하 최대 3페이지"
+                    )
+                    notice_variants.add(scenario_notice)
                     before = {p.name for p in root.iterdir()}
-                    outcome = assist_case(**kwargs)
+                    outcome = assist_case(**{**kwargs, "notice_text": scenario_notice})
                     choice = outcome.get("file_selection", {})
                     items = choice.get("items", [])
                     hints = [hint for item in items for hint in item.get("candidate_hints", [])]
@@ -182,9 +193,24 @@ def evaluate() -> dict[str, Any]:
                                 approval_fingerprint=fingerprint), "needs_review"),
                 )
                 for j, (mapping, flags, expected) in enumerate(cases):
+                    # Height 401 and varying size limits keep this family
+                    # distinct from the candidate cases, not merely IDs.
+                    scenario_notice = (
+                        f"- 증명사진: JPG 300×401px {510 + i * 20}KB 이하\n"
+                        f"- 이력서: PDF {3 + j}MB 이하 최대 3페이지"
+                    )
+                    notice_variants.add(scenario_notice)
+                    # Same inputs and approval flags, but a new notice
+                    # requires its OWN exact plan fingerprint.
+                    scenario_preview = assist_case(
+                        notice_text=scenario_notice, assignments=assignments,
+                    )
+                    current_flags = dict(flags)
+                    if "approval_fingerprint" in current_flags and current_flags["approval_fingerprint"] != "0" * 64:
+                        current_flags["approval_fingerprint"] = scenario_preview.get("approval_fingerprint")
                     before = {p.name for p in root.iterdir()}
                     outcome = assist_case(
-                        action="start", notice_text=notice, assignments=mapping, **flags
+                        action="start", notice_text=scenario_notice, assignments=mapping, **current_flags
                     )
                     assess(
                         "execution_guardrail", f"{i}-{j}",
@@ -202,8 +228,12 @@ def evaluate() -> dict[str, Any]:
     passed = sum(group["passed"] for group in result["families"].values())
     counts_ok = all(x["total"] == FAMILY_COUNT for x in result["families"].values())
     result["evaluated_cases"] = count
+    result["distinct_synthetic_notices"] = len(notice_variants)
     result["passed_cases"] = passed
-    result["status"] = "pass" if counts_ok and count == TOTAL and passed == count else "fail"
+    result["status"] = (
+        "pass" if counts_ok and count == TOTAL
+        and len(notice_variants) == TOTAL and passed == count else "fail"
+    )
     for group in result["families"].values():
         group["pass_rate"] = round(group["passed"] / group["total"], 4)
     result["metrics"] = {
