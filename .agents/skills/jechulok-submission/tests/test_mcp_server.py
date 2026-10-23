@@ -41,7 +41,7 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
         async with Client(server.mcp) as client:
             listing = await client.list_tools()
             names = {item.name for item in listing.tools}
-            self.assertEqual(names, {"check_file", "prepare_image", "extract_pdf_pages", "verify_submission", "parse_submission_rules", "prepare_from_requirements", "analyze_submission_notice", "prepare_submission_batch"})
+            self.assertEqual(names, {"check_file", "prepare_image", "extract_pdf_pages", "verify_submission", "parse_submission_rules", "prepare_from_requirements", "analyze_submission_notice", "prepare_submission_batch", "suggest_submission_files"})
             self.assertIsNotNone(next(x for x in listing.tools if x.name == "prepare_image").input_schema)
 
     async def test_real_stdio_transport(self):
@@ -53,7 +53,7 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
         )
         async with Client(params) as client:
             tools = await client.list_tools()
-            self.assertEqual(len(tools.tools), 8)
+            self.assertEqual(len(tools.tools), 9)
             response = await client.call_tool("check_file", {
                 "input_path": str(self.pdf),
                 "expected_format": "pdf",
