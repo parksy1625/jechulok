@@ -5,10 +5,45 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.4.0"
+  version: "1.5.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v1.5 — Cross-process write safety and understandable recovery
+
+The local-only stdio MCP server retains **19 tools**. Approved background
+batches now acquire an **OS-managed exclusive lock** in the first allowed
+directory's private `.jechulok-jobs/.writer.lock` before reading crash
+journals or creating output stages. Only one compliant JeChulOK v1.5 MCP
+instance using the **same first allowed root** may write/publish at a time.
+The lock stays held through job completion, rollback and journal update.
+The operating system releases a lock on process exit; its presence on
+disk does NOT imply a running job, and must not be deleted manually.
+
+If another process holds this lock, `start_submission_job` returns
+`status=busy` and `code=folder_writer_active`, and does not create output.
+Explicit interrupted-job cleanup also refuses to act while another
+process holds the lock. Preview/inspection is read-only and does not
+create a lock directory. The crash journal is rescanned *after*
+acquiring the lock to prevent a stale state from authorizing execution.
+Never reuse earlier approval after a refused, interrupted or cancelled job.
+
+To make recovery understandable, `list_interrupted_submission_jobs`
+returns `interrupted_job_count` and each recovered job now includes
+`staging_file_count`, `final_output_count`, whether the previous
+process might still be active, and a single recommended next action.
+A currently running job in the **same MCP instance** is not incorrectly
+shown as a crashed job. Final files are never deleted during recovery
+and explicit user confirmation is still required for temporary-file cleanup.
+
+This is **advisory OS locking**, not a secure sandbox or distributed lock.
+It does not stop other software or previous JeChulOK versions from
+modifying the same directory, nor protect overlapping work folders when
+the MCP instances use **different first-root configurations**. Use one
+canonical directory as the shared first root and keep filesystem
+permissions narrow. Multi-file publication is not fully atomic.
+
 
 ## v1.4 — Crash-safe local job records and explicit recovery
 
