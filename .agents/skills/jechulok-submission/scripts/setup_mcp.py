@@ -238,17 +238,38 @@ def probe_connection(allowed_root: Path, python_path: Path, *, timeout: int = 35
         "limitation": "Local MCP handshake only. Does not verify whether Codex/Cursor/Claude Desktop loaded its configuration.",
     }
 
+def prepare_upgrade(archive: Path, destination: Path, *, execute: bool) -> dict[str, object]:
+    """Offline side-by-side upgrade: never patch live venv or MCP client settings."""
+    from release_v20 import extract
+    result = extract(archive, destination, execute=execute)
+    return {
+        **result,
+        "upgrade_method": "side_by_side_local_archive",
+        "old_virtualenv_changed": False,
+        "live_mcp_sessions_changed": False,
+        "automatic_client_reregistration": False,
+        "rollback": "Keep the old installation and original MCP client config unchanged until the new local server has passed doctor/probe and explicit client config review.",
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="JeChulOK local-only MCP setup. Never changes client settings."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("install", "doctor", "config", "probe", "status"):
+    for command in ("install", "doctor", "config", "probe", "status", "upgrade"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--allowed-dir", required=True,
                          help="Existing canonical local directory containing your submission files")
         if command == "config":
             cmd.add_argument("--client", choices=CLIENTS, default="codex")
+        if command == "upgrade":
+            cmd.add_argument("--archive", type=Path, required=True,
+                             help="Trusted locally downloaded v2.0 release ZIP")
+            cmd.add_argument("--destination", type=Path, required=True,
+                             help="NEW empty/nonexistent destination folder, never the current installation")
+            cmd.add_argument("--execute", action="store_true",
+                             help="Create the new side-by-side copy after preview")
     return parser
 
 
@@ -256,6 +277,10 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         root = allowed_directory(args.allowed_dir)
+        if args.command == "upgrade":
+            result = prepare_upgrade(args.archive, args.destination, execute=args.execute)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
         if args.command == "install":
             result = install(root)
             print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -293,7 +318,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0 if passed else 1
         return 2
-    except (ValueError, OSError, RuntimeError) as exc:
+    except (ValueError, OSError, RuntimeError, KeyError) as exc:
         print("JeChulOK setup: " + str(exc), file=sys.stderr)
         return 1
 
