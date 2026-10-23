@@ -88,20 +88,33 @@ class JobJournal:
         if not self.root.exists():
             return []
         self._safe_directory()
-        result: list[dict[str, Any]] = []
-        for path in sorted(self.root.iterdir(), key=lambda p: p.name)[:MAX_RECORDS * 5]:
-            if path.suffix != ".json" or path.is_symlink():
-                continue
-            job_id = path.stem
+        # Never hide an interrupted job behind the first 32 alphabetically
+        # sorted completed records. Keeping a bounded recent-final history is
+        # fine; dropping an ACTIVE record is not safe for new job admission.
+        files = [p for p in self.root.iterdir()
+                 if p.suffix == ".json" and not p.is_symlink()]
+        if len(files) > 4096:
+            raise ValueError("Too many job journal records; manual review required")
+        records: list[tuple[int, dict[str, Any]]] = []
+        for path in files:
             try:
-                record = self.read(job_id)
-            except ValueError:
+                record = self.read(path.stem)
+                if record is not None:
+                    records.append((path.stat().st_mtime_ns, record))
+            except (OSError, ValueError):
                 continue
-            if record:
-                result.append(record)
-                if len(result) >= MAX_RECORDS:
-                    break
-        return result
+        unfinished = sorted(
+            (pair for pair in records if pair[1]["status"] in RUNNING),
+            reverse=True, key=lambda pair: pair[0],
+        )
+        if len(unfinished) > MAX_RECORDS:
+            raise ValueError("Too many unfinished jobs; manual review required")
+        finished = sorted(
+            (pair for pair in records if pair[1]["status"] not in RUNNING),
+            reverse=True, key=lambda pair: pair[0],
+        )
+        return [item[1] for item in unfinished
+                + finished[:MAX_RECORDS - len(unfinished)]]
 
 
 def stage_for_output(output: Path, job_id: str, item_id: str) -> Path:
