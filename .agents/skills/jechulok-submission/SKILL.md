@@ -5,7 +5,7 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "0.4.0"
+  version: "0.5.0"
 ---
 
 # JeChulOK Submission Agent Skill
@@ -23,10 +23,10 @@ python scripts/jechulok.py --help
 
 If dependencies are unavailable, explain that setup failed; do not claim that a file was processed. Processing works offline after installation.
 
-## MCP v0.3 integration (optional)
+## MCP integration (v0.5, optional)
 
-An MCP-capable agent may call six local stdio tools directly: `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
-`prepare_image`, `extract_pdf_pages`, `verify_submission`. If the JeChulOK MCP
+An MCP-capable agent may call nine local stdio tools. The original tools include `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
+`prepare_image`, `extract_pdf_pages`, `verify_submission`; multi-file tools are described below. If the JeChulOK MCP
 server is connected, prefer these tools over shell commands. See [MCP.md](MCP.md)
 for installation, allowed-directory settings and the security boundary.
 
@@ -75,13 +75,29 @@ the user explicitly approves the mapped plan should an agent call it with
 CLI read-only analysis is also available:
 
 ```bash
-python scripts/jechulok.py parse-notice --text 
+python scripts/jechulok.py parse-notice --text '- 증명사진: JPG 300×400px 500KB 이하'
+```
 
-1. When the user provides submission instructions, call `parse_submission_rules` first (or run `python scripts/jechulok.py parse-rules --text 'JPG 300×400px 500KB 이하'`).
-2. If status is `needs_review` or `no_rules`, do not edit automatically. Confirm ambiguous format choices, units, physical dimensions or unverified requirements with the user.
-3. Call `prepare_from_requirements` only after obtaining unambiguous technical constraints. For PDF, require explicit user-selected `pages_to_extract`. Never infer pages from a maximum page count.
-4. Use `contain` by default; do not use center crop without explicit approval. Keep original input unchanged.
-5. Call `verify_submission` for the output; never confuse technical rule checks with institution acceptance.
+## v0.5: Suggest local candidate files, never auto-assign
+
+When the user provides an authorized local directory containing possible
+submission files, call `suggest_submission_files(notice_text, directory_path)`.
+This tool is **read only** and scans only immediate files, up to 250 directory
+entries. It ranks compatible filename/extension hints for each named item but
+never inspects document contents, determines suitability, selects the file or
+executes conversions.
+
+Show the suggestions and unresolved items. Ask the user to review each
+`item_id` → `input_path` selection before constructing an assignment. If a
+filename suggests a resume, this is not proof the file is a resume.
+`needs_review`, `no_candidates`, or `truncated=true` must be stated.
+Symlinks and paths outside `JECHULOK_ALLOWED_DIRS` are not accepted. Do not
+treat suggestions as permission to upload, edit, or submit data.
+
+Then retain the v0.4 rule: obtain the dry-run plan from
+`prepare_submission_batch(execute=false)` and require real user approval of
+the exact paths and PDF page selections before the double-confirmed execution.
+Never call execution immediately after suggestion without this separate review.
 
 ## Decision flow
 
