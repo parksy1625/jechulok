@@ -142,7 +142,7 @@ class ReviewWorkflowTests(unittest.IsolatedAsyncioTestCase):
         async with Client(server.mcp) as client:
             listing = await client.list_tools()
             names = {tool.name for tool in listing.tools}
-            self.assertEqual(len(names), 19)
+            self.assertEqual(len(names), 20)
             self.assertIn("review_submission_plan", names)
             self.assertIn("verify_submission_package", names)
             review = await client.call_tool("review_submission_plan", {
@@ -165,7 +165,7 @@ class ReviewWorkflowTests(unittest.IsolatedAsyncioTestCase):
         async with Client(params) as client:
             listing = await client.list_tools()
             names = {tool.name for tool in listing.tools}
-            self.assertEqual(len(names), 19)
+            self.assertEqual(len(names), 20)
             self.assertIn("verify_submission_package", names)
 
 
