@@ -45,7 +45,9 @@ def client_configuration(client: str, python_path: Path, allowed_root: Path) -> 
     """Render a standalone, COPY-ONLY config snippet; never edits app settings."""
     if client not in CLIENTS:
         raise ValueError("Unsupported MCP client")
-    command = str(python_path.resolve(strict=False))
+    # Do not resolve interpreter symlinks: venv/bin/python often points to the
+    # global Python binary, but must be invoked through the venv path.
+    command = str(python_path.absolute())
     script = str(SERVER_SCRIPT)
     environment = {"JECHULOK_ALLOWED_DIRS": str(allowed_root)}
     if client == "codex":
