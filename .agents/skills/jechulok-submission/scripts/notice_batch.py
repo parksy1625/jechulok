@@ -1,4 +1,4 @@
-"""JeChulOK v0.6: deterministic multi-document notice parsing and safe batch planning.
+"""JeChulOK v1.0: deterministic multi-document notice parsing and safe batch planning.
 
 No LLM, network or OCR. Explicit named line items only; unassigned constraints
 and ambiguous conditions block all automated batch processing.
@@ -213,11 +213,14 @@ def _prepare_batch_internal(
     outcomes: list[dict[str, Any]] = []
     try:
         for plan in plans:
-            src = Path(plan["input_path"])
-            out = Path(plan["output_path"]) if plan["output_path"] else None
+            # An authorized path may have been replaced by a symlink or an
+            # existing file after preflight. Reauthorize immediately before
+            # each operation and fail the entire batch without overwrites.
+            src = confine(plan["input_path"])
+            out = confine(plan["output_path"], for_output=True) if plan["output_path"] else None
             rules = plan["rules"]
             if plan["action"] == "verify_existing":
-                report = core.evaluation(core.info_for(src), expected_format="pdf",
+                report = core.evaluation(core.info_for(core.safe_file(str(src))), expected_format="pdf",
                                          max_kb=rules["max_kb"], max_pages=rules["max_pages"])
                 if report["status"] != "pass":
                     raise ValueError("PDF 재검사 실패: " + plan["item_id"])
