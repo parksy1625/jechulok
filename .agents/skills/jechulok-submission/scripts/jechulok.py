@@ -105,8 +105,16 @@ def evaluation(meta: dict[str, Any], *, expected_format: str = "any", max_kb: in
         add("file_signature", "fail", "recognized file header", "unknown")
     else:
         add("file_signature", "pass", "recognized file header", actual_format)
-    if meta["extension"] != "unknown" and actual_format != "unknown" and meta["extension"] != actual_format:
+    if actual_format != "unknown" and meta["extension"] == "unknown":
+        # A recognizable header does not justify passing a file with an
+        # unrecognized extension (e.g., photograph.txt).
+        add("extension_matches_content", "unverified", actual_format, "unknown extension")
+    elif meta["extension"] != "unknown" and actual_format != "unknown" and meta["extension"] != actual_format:
         add("extension_matches_content", "fail", meta["extension"], actual_format)
+    if meta.get("issues"):
+        # Image/PDF integrity errors must block a technical 'pass' even if
+        # dimensions or page count were not explicitly requested.
+        add("file_integrity", "unverified", "readable and structurally valid file", meta["issues"][:5])
     if expected_format != "any":
         add("format", "pass" if actual_format == expected_format else "fail", expected_format, actual_format)
     if max_kb is not None:
