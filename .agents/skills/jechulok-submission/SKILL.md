@@ -5,7 +5,7 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "0.6.0"
+  version: "0.7.0"
 ---
 
 # JeChulOK Submission Agent Skill
@@ -25,7 +25,7 @@ If dependencies are unavailable, explain that setup failed; do not claim that a 
 
 ## MCP integration (v0.5, optional)
 
-An MCP-capable agent may call ten local stdio tools. The original tools include `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
+An MCP-capable agent may call twelve local stdio tools. The original tools include `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`; multi-file tools are described below. If the JeChulOK MCP
 server is connected, prefer these tools over shell commands. See [MCP.md](MCP.md)
 for installation, allowed-directory settings and the security boundary.
@@ -117,6 +117,26 @@ Read `summary.items[].technical_status` to report per-item progress:
 `not_executed`, or `verified`. A `verified` result checks **only technical
 file constraints**. Never equate this with a real submission or an institution's
 acceptance. Do not treat preview proposals as approved final paths.
+
+## v0.7: Separate review from technical success
+
+Use `review_submission_plan` to show an exact, read-only preflight and
+specific unresolved approvals or repair actions. Never infer permission from
+`awaiting_human_approval`: this means the work is NOT approved yet. Confirm
+the source files, output paths, PDF page range and crop permission with the
+actual user, then obtain a separate explicit instruction to run
+`prepare_submission_batch(execute=true, confirm_execution=true)`.
+
+After files are produced, use `verify_submission_package` with the original
+notice and each final `{item_id, file_path}` to independently re-open and
+recheck them. A previous `pass` result or matching filename is not evidence
+that a now-modified file will still pass. If any `remediation` item appears,
+show the repair guidance and stop before actual submission.
+
+Even `technical_pass` leaves every manual checklist item unchecked.
+Never claim `ready_to_submit`, accepted/received by an institution, correct
+photo composition, digital signature preservation, or validated document
+content. No actual form submission is implemented.
 
 ## Decision flow
 
