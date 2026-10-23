@@ -125,10 +125,9 @@ class LocalJobManager:
             self._recovered = {r["job_id"]: r for r in self._journal.scan()}
 
     def _has_unresolved_recovery(self) -> bool:
-        return any(
-            r["status"] in ACTIVE and r["job_id"] not in self._jobs
-            for r in self._recovered.values()
-        )
+        # Even a finished in-memory job may leave an ACTIVE disk record if
+        # its final journal update failed. Never silently skip that record.
+        return any(r["status"] in ACTIVE for r in self._recovered.values())
 
     def start(
         self, notice_text: str, assignments: list[dict[str, Any]],
@@ -470,7 +469,9 @@ class LocalJobManager:
             self._refresh_recovered()
             # A live job owned by this MCP instance is not a crash recovery.
             # Other processes' records may still need attention.
-            own_ids = set(self._jobs)
+            own_ids = {
+                key for key, job in self._jobs.items() if job["status"] in ACTIVE
+            }
             jobs = [
                 self._recovered_view(x) for x in self._recovered.values()
                 if x["status"] in ACTIVE and x["job_id"] not in own_ids
