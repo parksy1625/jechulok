@@ -73,3 +73,15 @@ with independent reviewers and privacy safeguards; report precision/recall
 with uncertainty and separate regression tests for discovered errors.
 Never include personal documents or identifying source paths in the
 open-source repository or the public evaluation artifact.
+
+
+## v1.9 extension: independently reviewed local corpus
+
+v1.8 synthetic regression remains unchanged. For empirical analysis of
+licensed, manually redacted real notices, v1.9 adds a separate evaluator
+documented in [REAL_EVALUATION.md](REAL_EVALUATION.md).
+**No real records are bundled or were evaluated for this release.**
+The CLI supports two independent human labels, third-party adjudication,
+precision/recall and fail-closed assessment, and aggregate-only output.
+Do not confuse its public synthetic example fixture with real-world
+accuracy or expose a real corpus in GitHub CI.
