@@ -5,7 +5,7 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "0.5.0"
+  version: "0.6.0"
 ---
 
 # JeChulOK Submission Agent Skill
@@ -25,7 +25,7 @@ If dependencies are unavailable, explain that setup failed; do not claim that a 
 
 ## MCP integration (v0.5, optional)
 
-An MCP-capable agent may call nine local stdio tools. The original tools include `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
+An MCP-capable agent may call ten local stdio tools. The original tools include `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`; multi-file tools are described below. If the JeChulOK MCP
 server is connected, prefer these tools over shell commands. See [MCP.md](MCP.md)
 for installation, allowed-directory settings and the security boundary.
@@ -98,6 +98,25 @@ Then retain the v0.4 rule: obtain the dry-run plan from
 `prepare_submission_batch(execute=false)` and require real user approval of
 the exact paths and PDF page selections before the double-confirmed execution.
 Never call execution immediately after suggestion without this separate review.
+
+## v0.6: Read-only output naming and technical status tracking
+
+Once the user **manually confirms** each item-to-input mapping, call
+`suggest_submission_output_paths(notice_text, assignments, output_directory)`
+to propose new output filenames. This tool does not generate, reserve, or
+approve files. Report any missing PDF page selection as a manual decision.
+Existing compliant PDFs can be checked without generating copies.
+
+Present the suggested paths to the user for review. The human-approved mapping
+must then pass `prepare_submission_batch(execute=false)` preflight.
+Only after separately approving that exact plan may the agent execute with
+both `execute=true` and `confirm_execution=true`.
+
+Read `summary.items[].technical_status` to report per-item progress:
+`planned`, `awaiting_confirmation`, `blocked`, `rolled_back`,
+`not_executed`, or `verified`. A `verified` result checks **only technical
+file constraints**. Never equate this with a real submission or an institution's
+acceptance. Do not treat preview proposals as approved final paths.
 
 ## Decision flow
 
