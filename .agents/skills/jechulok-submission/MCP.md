@@ -1,4 +1,4 @@
-# 제출OK MCP v1.4 — local stdio server
+# 제출OK MCP v1.5 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -591,3 +591,42 @@ Partial **final** output files may remain: **do not delete them automatically**.
 The tool never uploads to an institution or promises to restore a whole
 batch transaction. This is crash detection with explicit remediation,
 NOT OS-level crash-atomic file transactions or resume-on-restart.
+
+
+## v1.5 — Multiple MCP processes on the same work folder
+
+**19 tools remain unchanged.** This update strengthens approved
+background jobs and recovery without changing the tool schemas.
+
+The first configured `JECHULOK_ALLOWED_DIRS` root owns the private
+`.jechulok-jobs/.writer.lock`. Starting a non-preview background job
+acquires an advisory, exclusive **OS file lock** before accepting the
+durable job and keeps it through publishing, result journaling and
+rollback. A second local MCP process using that **same first root**
+gets a safe `{"status":"busy","code":"folder_writer_active"}` response
+rather than starting a competing job. The actual file remains on disk;
+the operating system releases the *lock* on process termination. Never
+delete `.writer.lock` to "unlock" a process.
+
+The lock is also taken when
+`resolve_interrupted_submission_job(...cleanup_staging=true,...)`
+would delete verified staging files. Recovery still requires all three
+explicit authorizations and denies cleanup while a writer is active.
+The manager rescans the journal **after** taking the OS lock so
+another MCP process's newly started or finished work is recognized.
+Read-only previews, status checks and recovery listings do not
+create the journal directory/lock if absent.
+
+The recovery list shows a concise **next action**, counts of present
+private staged and final files, and whether an earlier PID might be
+active. A live job in the querying MCP process is not shown as a crash
+recovery. No final outputs are silently removed; no paused job resumes
+automatically. A process crash releases the OS lock but leaves any
+incomplete journal for explicit user review.
+
+**Limits:** this is advisory locking among compliant local MCP
+instances using the same first allowed root. It cannot coordinate
+different journal roots, remote machines, uncooperative programs or
+legacy versions. It does not turn multiple-file output publishing
+into a fully atomic transaction. Keep sensitive work directories
+private and manually inspect leftover final files after crashes.
