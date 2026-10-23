@@ -107,22 +107,27 @@ def build(destination: Path) -> dict:
         raise ValueError("Release artifact exists; never overwrite it")
     if sum(len(data) for _, data in entries) > MAX_UNCOMPRESSED_SIZE:
         raise ValueError("Release would exceed safe uncompressed limit")
+    created_zip = False
+    created_checksum = False
     try:
-        # Exclusive create closes a TOCTOU window for pre-existing files.
+        # Exclusive create avoids replacing pre-existing files.
         with target.open("xb") as fp:
+            created_zip = True
             with zipfile.ZipFile(fp, "w") as archive:
                 for name, content in entries:
                     archive.writestr(_zipinfo(f"{ARCHIVE_ROOT}/{name}"), content)
                 archive.writestr(_zipinfo(MANIFEST_NAME), _manifest(entries))
         checked = verify(target)
         with sidecar.open("x", encoding="utf-8", newline="\n") as fp:
+            created_checksum = True
             fp.write(f"{checked['archive_sha256']}  {target.name}\n")
     except BaseException:
-        # Only remove the artifact we just created, not an existing file.
-        if target.exists():
-            target.unlink()
-        if sidecar.exists():
-            sidecar.unlink()
+        # Never delete a concurrently created user file if exclusive open
+        # failed before this process owned the artifact.
+        if created_zip:
+            target.unlink(missing_ok=True)
+        if created_checksum:
+            sidecar.unlink(missing_ok=True)
         raise
     return {"status": "built", **checked, "archive": str(target), "checksum_file": str(sidecar),
             "client_settings_changed": False, "user_files_read": False}
