@@ -149,7 +149,7 @@ class NoticeTests(unittest.IsolatedAsyncioTestCase):
             names = {t.name for t in listing.tools}
             self.assertIn("analyze_submission_notice", names)
             self.assertIn("prepare_submission_batch", names)
-            self.assertEqual(len(names), 9)
+            self.assertEqual(len(names), 10)
             response = await client.call_tool("analyze_submission_notice", {"notice_text": NOTICE})
             self.assertFalse(response.is_error)
             self.assertEqual(response.structured_content["total_items"], 2)
@@ -167,7 +167,7 @@ class NoticeTests(unittest.IsolatedAsyncioTestCase):
         )
         async with Client(params) as client:
             listing = await client.list_tools()
-            self.assertEqual(len(listing.tools), 9)
+            self.assertEqual(len(listing.tools), 10)
             response = await client.call_tool("analyze_submission_notice", {"notice_text": NOTICE})
             self.assertEqual(response.structured_content["status"], "parsed")
 
