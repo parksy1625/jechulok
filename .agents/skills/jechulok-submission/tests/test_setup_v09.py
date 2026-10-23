@@ -70,7 +70,8 @@ class SetupV09Tests(unittest.TestCase):
             ))
             server = obj["mcpServers"]["jechulok"]
             self.assertEqual(len(server["args"]), 1)
-            self.assertTrue(server["args"][0].endswith("scripts/mcp_server.py"))
+            self.assertEqual(Path(server["args"][0]).name, "mcp_server.py")
+            self.assertEqual(Path(server["args"][0]).parent.name, "scripts")
             self.assertTrue(server["command"].startswith(str(self.venv)))
             self.assertEqual(server["env"]["JECHULOK_ALLOWED_DIRS"], str(self.root))
             self.assertNotIn("url", server)
