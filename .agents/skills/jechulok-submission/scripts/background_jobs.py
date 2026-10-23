@@ -1,4 +1,4 @@
-"""JeChulOK v1.4 local batch manager with optional durable, fail-closed recovery.
+"""JeChulOK v1.5 local batch manager with optional durable, fail-closed recovery.
 
 The old LocalJobManager() API stays transient for v1.3 compatibility.
 MCP uses LocalJobManager(journal_root=...) so approved jobs are staged and
@@ -15,6 +15,7 @@ from typing import Any, Callable
 
 import jechulok as core
 from job_journal import JobJournal, eligible_stage, pid_is_alive, stage_for_output
+from job_lock import FolderWriteLock
 from notice_batch import prepare_batch
 
 MAX_HISTORY = 16
@@ -28,6 +29,7 @@ class LocalJobManager:
         self._jobs: dict[str, dict[str, Any]] = {}
         self._journal = JobJournal(journal_root) if journal_root is not None else None
         self._session = token_urlsafe(12)
+        self._active_lease: FolderWriteLock | None = None
         self._recovered: dict[str, dict[str, Any]] = {}
         if self._journal is not None:
             self._recovered = {r["job_id"]: r for r in self._journal.scan()}
@@ -102,6 +104,11 @@ class LocalJobManager:
             "outputs": list(job.get("outputs", [])),
         })
 
+    def _refresh_recovered(self) -> None:
+        # Avoid stale snapshots when another MCP process writes a record.
+        if self._journal is not None:
+            self._recovered = {r["job_id"]: r for r in self._journal.scan()}
+
     def _has_unresolved_recovery(self) -> bool:
         return any(r["status"] in ACTIVE for r in self._recovered.values())
 
@@ -126,7 +133,28 @@ class LocalJobManager:
                 "job_started": False, "institutional_submission_confirmed": False,
             }
         with self._lock:
+            if any(j["status"] in ACTIVE for j in self._jobs.values()):
+                return {"status": "busy", "message": "이미 실행 중인 일괄 작업이 있습니다."}
+            lease = None
+            if self._journal is not None:
+                lease = FolderWriteLock.acquire(self._journal)
+                if lease is None:
+                    return {
+                        "status": "busy", "code": "folder_writer_active",
+                        "message": "동일 작업 폴더에서 다른 MCP 프로세스가 작업 중입니다.",
+                        "job_started": False,
+                    }
+                self._active_lease = lease
+                try:
+                    self._refresh_recovered()
+                except BaseException:
+                    lease.release()
+                    self._active_lease = None
+                    raise
             if self._has_unresolved_recovery():
+                if lease is not None:
+                    lease.release()
+                    self._active_lease = None
                 return {
                     "status": "recovery_required",
                     "message": "이전에 중단된 작업의 출력을 확인하고 복구 결정을 마친 뒤 새 작업을 시작하세요.",
@@ -141,6 +169,9 @@ class LocalJobManager:
                         del self._jobs[key]
                         break
             if len(self._jobs) >= MAX_HISTORY:
+                if lease is not None:
+                    lease.release()
+                    self._active_lease = None
                 return {"status": "busy", "message": "최근 작업 기록 공간이 가득 찼습니다."}
             job_id = token_urlsafe(18)
             staging: list[dict[str, str]] = []
@@ -164,15 +195,22 @@ class LocalJobManager:
                 "cancel": Event(), "staging": staging,
                 "outputs": [p["output_path"] for p in preview["plan"] if p.get("output_path")],
             }
-            # Fail closed: journal is committed before worker can create files.
-            self._persist(job)
-            self._jobs[job_id] = job
-            worker = Thread(
-                target=self._work,
-                args=(job_id, notice_text, deepcopy(assignments), confine),
-                name="jechulok-job-" + job_id[:6], daemon=True,
-            )
-            worker.start()
+            # Keep the OS lease until _work finishes, including rollback.
+            try:
+                self._persist(job)
+                self._jobs[job_id] = job
+                worker = Thread(
+                    target=self._work,
+                    args=(job_id, notice_text, deepcopy(assignments), confine),
+                    name="jechulok-job-" + job_id[:6], daemon=True,
+                )
+                worker.start()
+            except BaseException:
+                self._jobs.pop(job_id, None)
+                if lease is not None:
+                    lease.release()
+                    self._active_lease = None
+                raise
             return self._view(job)
 
     def _cleanup_stages(self, staging: list[dict[str, str]]) -> None:
@@ -278,6 +316,16 @@ class LocalJobManager:
 
     def _work(self, job_id: str, notice_text: str,
               assignments: list[dict[str, Any]], confine: Callable[..., Path]) -> None:
+        try:
+            self._execute_work(job_id, notice_text, assignments, confine)
+        finally:
+            with self._lock:
+                if self._active_lease is not None:
+                    self._active_lease.release()
+                    self._active_lease = None
+
+    def _execute_work(self, job_id: str, notice_text: str,
+                      assignments: list[dict[str, Any]], confine: Callable[..., Path]) -> None:
         with self._lock:
             job = self._jobs[job_id]
             if job["status"] == "queued":
@@ -367,6 +415,7 @@ class LocalJobManager:
             job = self._jobs.get(job_id)
             if job is not None:
                 return self._view(job)
+            self._refresh_recovered()
             record = self._recovered.get(job_id)
             if record is not None:
                 return self._recovered_view(record)
@@ -401,12 +450,19 @@ class LocalJobManager:
             return self._view(job)
 
     def review_recovery(self) -> dict[str, Any]:
-        """Read-only listing; no automatic deletion or job resurrection."""
+        """Read-only ordered recovery checklist; no destructive side effects."""
         with self._lock:
+            self._refresh_recovered()
             jobs = [self._recovered_view(x) for x in self._recovered.values() if x["status"] in ACTIVE]
             return {
                 "status": "recovery_required" if jobs else "clear",
                 "interrupted_jobs": jobs,
+                "interrupted_job_count": len(jobs),
+                "recommended_action": (
+                    "최종 출력 파일을 직접 확인하고, 해당 작업의 resolve_interrupted_submission_job "
+                    "미리보기를 호출하세요."
+                    if jobs else "복구 대기 기록이 없습니다. 새 작업은 미리보기부터 진행하세요."
+                ),
                 "auto_resume": False, "auto_delete": False,
                 "message": "임시 파일은 명시적으로 복구를 승인하기 전까지 삭제하지 않습니다.",
             }
@@ -417,6 +473,40 @@ class LocalJobManager:
         confirm_cleanup: bool = False,
         checked_final_outputs: bool = False,
         confine: Callable[..., Path],
+    ) -> dict[str, Any]:
+        with self._lock:
+            self._refresh_recovered()
+            if not (cleanup_staging and confirm_cleanup and checked_final_outputs):
+                return self._resolve_recovery_locked(
+                    job_id, cleanup_staging=cleanup_staging,
+                    confirm_cleanup=confirm_cleanup,
+                    checked_final_outputs=checked_final_outputs, confine=confine,
+                )
+            if self._journal is None:
+                return {"status": "error", "message": "복구 기록 저장소가 없습니다."}
+            lease = FolderWriteLock.acquire(self._journal)
+            if lease is None:
+                return {
+                    "status": "busy", "code": "folder_writer_active",
+                    "message": "다른 MCP 서버가 같은 폴더에서 작업 중입니다. 정리하지 않았습니다.",
+                    "final_outputs_will_be_deleted": False,
+                }
+            try:
+                # The journal might have been updated by the previous owner
+                # since our initial read; recheck after obtaining the OS lock.
+                self._refresh_recovered()
+                return self._resolve_recovery_locked(
+                    job_id, cleanup_staging=cleanup_staging,
+                    confirm_cleanup=confirm_cleanup,
+                    checked_final_outputs=checked_final_outputs, confine=confine,
+                )
+            finally:
+                lease.release()
+
+    def _resolve_recovery_locked(
+        self, job_id: str, *,
+        cleanup_staging: bool, confirm_cleanup: bool,
+        checked_final_outputs: bool, confine: Callable[..., Path],
     ) -> dict[str, Any]:
         with self._lock:
             record = self._recovered.get(job_id)
