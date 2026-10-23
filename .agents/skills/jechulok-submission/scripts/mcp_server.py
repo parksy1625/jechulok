@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v1.4). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v1.6). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -434,6 +434,29 @@ def resolve_interrupted_submission_job(
         confirm_cleanup=confirm_cleanup,
         checked_final_outputs=checked_final_outputs,
         confine=_confined,
+    ))
+
+
+from submission_assistant import assist as guided_assist
+
+@mcp.tool()
+def assist_submission(
+    action: Literal["next", "start", "status", "cancel", "verify"] = "next",
+    notice_text: str | None = None,
+    assignments: list[dict[str, Any]] | None = None,
+    final_files: list[dict[str, Any]] | None = None,
+    job_id: str | None = None,
+    approval_fingerprint: str | None = None,
+    execute: bool = False,
+    confirm_execution: bool = False,
+) -> dict[str, Any]:
+    """One guided entry point: ask the next human question, preview exact input/output plan, start only with explicit approval and matching plan fingerprint, poll/cancel local job or verify final files. Never uploads or infers consent."""
+    return _result(lambda: guided_assist(
+        action=action, notice_text=notice_text,
+        assignments=assignments, final_files=final_files,
+        job_id=job_id, approval_fingerprint=approval_fingerprint,
+        execute=execute, confirm_execution=confirm_execution,
+        confine=_confined, jobs=local_jobs,
     ))
 
 
