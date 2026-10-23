@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v1.8 빠른 시작
+# 제출OK Agent Skill + MCP v1.9 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -259,3 +259,31 @@ python scripts/evaluate_v18.py --check
 GitHub Actions에서도 평가 JSON을 jechulok-eval-v18-synthetic
 아티팩트로 제공합니다. 평가 방법과 해석 한계는 EVALUATION.md를
 참고하세요. 원본 파일이나 개인 제출 공고는 테스트에 사용하지 않습니다.
+
+
+## 12. 실제 공고 정확도를 독립 검수로 평가하기 (v1.9)
+
+v1.9는 실사용자 자료를 **자동 수집하지 않습니다**. 사용 권한이
+있고 개인정보를 수동으로 제거한 공고의 **파일 제출 기술 조건만**
+별도 JSONL 파일로 수집해야 합니다. 사람 2명이 서로의 답변과
+파서 출력 결과를 보지 않고, 같은 공고에 정답 라벨을 부여하세요.
+의견이 다르면 제3자가 따로 판정합니다.
+
+사람의 승인을 받은 뒤 아래처럼 로컬에서만 실행하세요.
+
+```bash
+cd .agents/skills/jechulok-submission
+mkdir -p private-evaluation
+# 먼저 REAL_EVALUATION.md의 스키마로 파일을 안전하게 작성하세요.
+python scripts/evaluate_real_v19.py private-evaluation/notices.notice-eval-private.jsonl --strict
+```
+
+실제 파일이 없다면 GitHub에 있는
+`tests/fixtures/v19_example_synthetic.jsonl` 예제로만 시험할 수
+있으며 **그 결과를 실제 성능으로 표현해서는 안 됩니다.**
+출력되는 집계 결과에서 조건 누락률과 잘못된 조건률, 검수자
+합의율과 안전 차단률을 별도로 비교하세요.
+
+실제 공고나 평가 자료를 GitHub 저장소·Actions·공개 이슈에
+업로드하지 마세요. 사람의 비식별화 검수가 필수이며,
+정규표현식 차단만으로 민감정보 누출을 완전히 방지할 수 없습니다.
