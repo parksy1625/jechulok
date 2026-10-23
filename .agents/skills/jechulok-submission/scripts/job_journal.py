@@ -131,19 +131,39 @@ def eligible_stage(path: Path, expected: str, job_id: str) -> bool:
 
 
 def pid_is_alive(pid: Any) -> bool:
+    """Read-only PID liveness probe. Windows MUST NOT use os.kill(pid, 0)."""
     if type(pid) is not int or pid <= 0:
         return True
+    if os.name == "nt":
+        # On Windows os.kill(pid, 0) can generate a console interrupt:
+        # it is NOT a harmless POSIX-style liveness check. Use kernel32.
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel.OpenProcess.restype = wintypes.HANDLE
+        kernel.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+        kernel.GetExitCodeProcess.restype = wintypes.BOOL
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.CloseHandle.restype = wintypes.BOOL
+        handle = kernel.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            # ERROR_INVALID_PARAMETER: PID doesn't exist. Access denied or
+            # any other error must be conservatively treated as active.
+            return False if ctypes.get_last_error() == 87 else True
+        try:
+            exit_code = wintypes.DWORD()
+            if not kernel.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                return True
+            return exit_code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel.CloseHandle(handle)
     try:
-        os.kill(pid, 0)
+        os.kill(pid, 0)  # Only POSIX treats signal 0 as a non-signalling probe.
     except ProcessLookupError:
         return False
     except PermissionError:
         return True
     except OSError as exc:
-        # Windows: ERROR_INVALID_PARAMETER (87) for nonexistent PIDs.
-        # POSIX: ESRCH when no such process exists. All other errors
-        # are treated conservatively as possibly alive.
-        if exc.errno == errno.ESRCH or getattr(exc, "winerror", None) == 87:
-            return False
-        return True
+        return False if exc.errno == errno.ESRCH else True
     return True
