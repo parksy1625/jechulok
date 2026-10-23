@@ -5,10 +5,37 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.7.0"
+  version: "1.8.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v1.8 — Evidence-based synthetic guidance regression evaluation
+
+For reproducible local quality checks, run
+`python scripts/evaluate_v18.py --check` from the skill directory.
+This produces JSON results from exactly **100 distinct synthetic notices**
+in four controlled groups of 25:
+explicit rules, ambiguous notice rejection, candidate-selection safeguards,
+and unauthorized execution rejection.
+
+The **expected ground truths are defined independently** of the product
+outputs in the evaluation script. Case identifiers and pass/fail counts are
+inspectable in the JSON artifact published by GitHub Actions for Linux
+Python 3.11. The entire existing functional/security suite continues to run
+on Windows, macOS, and Linux / Python 3.11 and 3.13.
+
+The runner creates only synthetic throwaway fixtures, including misleading
+filenames whose bytes are deliberately invalid, to confirm that name-based
+hints are never presented as content-verified or auto-selected. It never
+touches real user documents or grants execution approval.
+
+**Never describe a synthetic 100/100 score as real-world notice parsing
+accuracy, real candidate relevance, or actual user satisfaction.** The
+single grouped-choice question is a static two-item fixture observation,
+not a measured user conversation. See EVALUATION.md for definitions,
+limitations and the required independent real-world evaluation.
+
 
 ## v1.7 — Concise and grounded human-facing guidance
 
