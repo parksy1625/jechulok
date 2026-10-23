@@ -41,3 +41,19 @@ Run `python -m unittest discover -s tests -v` in the skill directory before publ
 ## v0.3 rule extraction contract
 
 The `submission_rules.py` parser interprets only explicitly written supported formats, inclusive maximum size limits (KiB/MiB), exact pixel sizes, and inclusive maximum PDF page counts. Ambiguous, conflicting or unsupported conditions return `needs_review`, blocking `prepare_from_requirements` from creating output. PDF page selection must be explicitly supplied separately. Outputs are always new files restricted to permitted local folders and independently verified. File contents, image composition and actual institutional acceptance are out of scope.
+
+## v0.4 multi-item notice & batch contract
+
+- Deterministic named-line detection only; evidence lines retained. Unknown
+  shared rules, duplicate recognized categories, unsupported format choices,
+  ambiguity and units block execution; no file-to-item guessing.
+- Explicit `item_id` assignments are required for every recognized entry.
+- Dry-run is the default and never writes files. Execution requires both
+  `execute=true` and `confirm_execution=true` after actual user authorization.
+- Full preflight validates paths, allowed roots, expected file formats, output
+  collisions, crop approval, and PDF page selection before the first write.
+- A failed operation rolls back outputs completed during that batch. Inputs and
+  pre-existing files remain unchanged. This is best-effort filesystem rollback,
+  not a transaction against concurrent external filesystem modifications.
+- Original PDFs meeting limits can be verified without generating new copies.
+- No OCR, office conversion, institution-specific decisions or actual upload.

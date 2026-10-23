@@ -2,7 +2,7 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v0.3.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v0.4.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
 
@@ -44,10 +44,10 @@ GitHub Actions가 Python 3.11·3.13 환경에서 테스트합니다. CLI 스킬 
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v0.3 — AI가 직접 호출하는 로컬 도구
+## MCP v0.4 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
-`prepare_image`, `extract_pdf_pages`, `verify_submission` 여섯 가지 도구를
+`prepare_image`, `extract_pdf_pages`, `verify_submission` 8개 도구를
 호출할 수 있습니다. Python 3.11+와 MCP Python SDK v2가 필요합니다.
 
 ```bash
@@ -56,7 +56,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v0.3 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v0.4 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
@@ -71,3 +71,17 @@ AI 클라이언트에서 MCP 서버를 연결해야 합니다. JPG 생성 후에
 CLI도 같은 파서를 사용합니다: `python scripts/jechulok.py parse-rules --text 'JPG 300×400px 500KB 이하'`
 
 JPG 또는 PNG 같은 선택형 조건, cm/mm, 픽셀 단위가 없는 숫자, `500KB 미만`, 흰색 배경, 얼굴 비율, 전자서명 등은 자동 제출 적합성으로 판단하지 않습니다. PDF는 사용자에게 어떤 페이지를 보존할지 별도로 확인합니다. 단위는 기존 CLI와 동일한 1024기준 KiB/MiB입니다. 상세 내용은 MCP.md를 참고하세요.
+
+### v0.4: 긴 공고 · 다중 파일 제출 준비
+
+- `analyze_submission_notice`: 명시적으로 이름이 붙은 사진·이력서·증명서 조건을 공고에서 항목별로 분리하고 근거 줄을 함께 반환합니다.
+- `prepare_submission_batch`: 항목 ID와 실제 파일 경로를 **수동으로 매칭**한 뒤 전체 계획을 우선 미리보기로 보여줍니다.
+- **실행 전 이중 승인**: `execute=true`, `confirm_execution=true`를 모두 지정해야 실제 결과 파일을 만듭니다.
+- 모호한 규격이나 공통 미배정 조건이 있으면 실행하지 않습니다. PDF 페이지 삭제·추출 범위는 사용자가 직접 지정해야 합니다.
+- 전체 사전 검사, 기존 파일 덮어쓰기 방지, 기술 조건 재검증, 중간 실패 시 생성 결과 되돌리기를 제공합니다.
+
+```bash
+python scripts/jechulok.py parse-notice --text $'- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지'
+```
+
+MCP는 이제 **8개 도구**입니다. 기존 `main` 웹서비스 배포에는 영향을 주지 않으며, 별도 로컬 CLI/MCP 서버입니다.

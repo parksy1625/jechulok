@@ -1,4 +1,4 @@
-# 제출OK MCP v0.3 — local stdio server
+# 제출OK MCP v0.4 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -39,6 +39,8 @@ Important: The default allowed directory is the MCP process's working directory,
 | `verify_submission` | Reopen output and verify **at least one** explicit condition | No |
 | `parse_submission_rules` | Extract exact technical conditions and flag uncertain ones | No |
 | `prepare_from_requirements` | Prepare a JPG or explicit PDF pages and reverify technical output | Creates a new file |
+| `analyze_submission_notice` | Split explicit named file items and keep their source-line evidence | No |
+| `prepare_submission_batch` | Preflight explicit item-to-file mappings and optionally process with double confirmation | Only with execution approval |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -79,3 +81,55 @@ Official MCP SDK: https://py.sdk.modelcontextprotocol.io/
 `prepare_from_requirements(input_path, output_path, requirements_text, pages_to_extract=None, mode='contain', crop_approved=False)` refuses to edit when any rule is ambiguous or unverified. For PDF, the maximum number of pages does NOT indicate which pages to discard: supply `pages_to_extract` from the user's explicit instructions. For JPG, `mode='cover'` requires `crop_approved=true` and actual user authorization. Both new and existing tools respect `JECHULOK_ALLOWED_DIRS`, never overwrite existing files and never upload data.
 
 This is deterministic rule parsing, NOT a language model, institution policy database or OCR. Multiple allowed formats, cm/mm, missing pixel units, strict '미만', portrait/background requirements and signatures require manual review. Size values use 1024-based KiB/MiB. An output `pass` attests only to verified technical constraints.
+
+## v0.4 — Long notice & batch preparation
+
+First call `analyze_submission_notice(notice_text)`, which only understands
+explicitly labeled lines, e.g.:
+
+```text
+- 증명사진: JPG 300×400px 500KB 이하
+- 이력서: PDF 5MB 이하, 최대 3페이지
+```
+
+It returns `item_01` (photo) and `item_02` (resume), with source line and
+evidence, parsed technical conditions and unresolved conditions. Whole-document
+`needs_review` blocks batch execution, including common conditions that cannot
+be attributed to a named file. This parser does NOT automatically split PDFs
+into documents, read scans, infer which local file is a resume, or infer which
+pages should be discarded. It supports at most 12 recognized items and
+20,000 notice characters.
+
+Provide explicit user-reviewed mappings:
+
+```json
+{
+  "notice_text": "- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지",
+  "assignments": [
+    {"item_id": "item_01", "input_path": "/workspace/photo.png", "output_path": "/workspace/ready.jpg"},
+    {"item_id": "item_02", "input_path": "/workspace/resume.pdf",
+     "output_path": "/workspace/resume-selected.pdf", "pages_to_extract": "1-3"}
+  ],
+  "execute": false,
+  "confirm_execution": false
+}
+```
+
+1. Default: `execute=false` returns `status=planned` **without writing files**.
+2. The user must explicitly approve the mapping and final page selections.
+3. Only then `execute=true, confirm_execution=true` may create outputs.
+4. All assignments are preflighted together; ambiguous or missing items block
+   the entire batch. An operation failure removes outputs successfully created
+   during the same batch.
+5. Unchanged compliant PDFs can be verified with neither
+   `pages_to_extract` nor `output_path`; such a step does not generate a copy.
+6. Every new result is reopened and checked against its own technical rules.
+   The tool cannot verify file contents, face positioning, e-signature validity,
+   or institutional submission success.
+
+CLI (analysis only):
+
+```bash
+python scripts/jechulok.py parse-notice --text $'- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지'
+```
+

@@ -268,6 +268,8 @@ def positive(value: str) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="JeChulOK local submission-file checker and preparer (no network, no overwrite)")
     actions = parser.add_subparsers(dest="command", required=True)
+    notice = actions.add_parser("parse-notice", help="Split explicit named file conditions in a long Korean notice (no edits)")
+    notice.add_argument("--text", required=True)
     rule = actions.add_parser("parse-rules", help="Parse Korean submission conditions; does not modify files")
     rule.add_argument("--text", required=True)
     check = actions.add_parser("check", help="Inspect file and evaluate explicit constraints")
@@ -298,6 +300,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "parse-rules":
             result = parse_requirements(args.text)
+        elif args.command == "parse-notice":
+            from notice_batch import analyze_notice
+            result = analyze_notice(args.text)
         else:
             file = safe_file(args.input)
             if args.command == "check":
@@ -308,7 +313,7 @@ def main(argv: list[str] | None = None) -> int:
                 result = prepare_pdf(file, args)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         state = result["status"]
-        return 2 if state == "fail" else 3 if state in {"unverified", "needs_review", "no_rules"} else 0
+        return 2 if state == "fail" else 3 if state in {"unverified", "needs_review", "no_rules", "no_items"} else 0
     except (ValueError, OSError, Image.DecompressionBombError, UnidentifiedImageError) as exc:
         print(json.dumps({"status": "error", "message": str(exc)}, ensure_ascii=False))
         return 1

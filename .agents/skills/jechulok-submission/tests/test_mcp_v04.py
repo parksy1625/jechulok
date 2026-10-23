@@ -125,9 +125,11 @@ class NoticeTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(res["results"][0]["output"])
 
     def test_rollback_later_processing_failure(self):
-        text = NOTICE.replace("5MB 이하", "1KB 이하")
-        res = prepare_batch(text, self.assignments, execute=True,
-                            confirm_execution=True, confine=server._confined)
+        # Force a failure AFTER the first JPG has been written, regardless
+        # of how efficiently a blank PDF might compress on this pypdf version.
+        with patch.object(server.core, "prepare_pdf", side_effect=ValueError("simulated PDF failure")):
+            res = prepare_batch(NOTICE, self.assignments, execute=True,
+                                confirm_execution=True, confine=server._confined)
         self.assertEqual(res["status"], "error", res)
         self.assertFalse(self.out_photo.exists(), "First output should be rolled back")
         self.assertFalse(self.out_pdf.exists(), "Second failed output must not persist")
