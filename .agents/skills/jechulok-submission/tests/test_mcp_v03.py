@@ -35,7 +35,7 @@ class V03Tools(unittest.IsolatedAsyncioTestCase):
     async def test_six_tools_and_parser(self):
         async with Client(server.mcp) as client:
             listing=await client.list_tools()
-            self.assertEqual({x.name for x in listing.tools},{"check_file","prepare_image","extract_pdf_pages","verify_submission","parse_submission_rules","prepare_from_requirements","analyze_submission_notice","prepare_submission_batch","suggest_submission_files", "suggest_submission_output_paths", "review_submission_plan", "verify_submission_package", "guide_submission_workflow", "create_submission_html_report"})
+            self.assertEqual({x.name for x in listing.tools},{"check_file","prepare_image","extract_pdf_pages","verify_submission","parse_submission_rules","prepare_from_requirements","analyze_submission_notice","prepare_submission_batch","suggest_submission_files", "suggest_submission_output_paths", "review_submission_plan", "verify_submission_package", "guide_submission_workflow", "create_submission_html_report", "start_submission_job", "get_submission_job", "cancel_submission_job"})
             r=await client.call_tool("parse_submission_rules",{"requirements_text":"JPG 300×400px 500KB 이하"})
             self.assertEqual(r.structured_content["status"],"parsed")
 
