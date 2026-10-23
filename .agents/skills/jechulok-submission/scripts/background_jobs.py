@@ -216,10 +216,6 @@ class LocalJobManager:
                 identity = final.stat()
                 published.append((stage, final, (identity.st_dev, identity.st_ino,
                                                   identity.st_size, identity.st_mtime_ns)))
-                constraints = next(
-                    p["rules"] for p in staged_result["summary"]["items"]
-                    if p["item_id"] == item_id
-                ) if False else None  # See final verification below.
                 # Reinspect the final filename, not the stage name.
                 meta = core.info_for(core.safe_file(str(final)))
                 spec = result["verification"]["checks"]
