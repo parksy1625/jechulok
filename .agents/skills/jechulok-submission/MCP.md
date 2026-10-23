@@ -1,4 +1,4 @@
-# 제출OK MCP v0.8 — local stdio server
+# 제출OK MCP v0.9 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -341,3 +341,50 @@ original notice and the confirmed **final** item-to-file paths:
 
 The HTML is a **snapshot**, not a live monitor. Re-run technical verification
 after any modification of the final files. Neither new tool uploads or submits.
+
+
+## v0.9 — Installation, configuration and local diagnostics
+
+**All existing 14 MCP tools remain unchanged.** This release improves the
+local setup lifecycle, not the file-processing permissions.
+
+The standard-library setup helper, `scripts/setup_mcp.py`, provides:
+
+```bash
+# Only this command installs packages. Explicit invocation required.
+python3 scripts/setup_mcp.py install --allowed-dir "/absolute/path/to/documents"
+
+# Read-only environment diagnostics (no file output).
+python3 scripts/setup_mcp.py doctor --allowed-dir "/absolute/path/to/documents"
+
+# Print a Codex TOML snippet to copy into ~/.codex/config.toml.
+python3 scripts/setup_mcp.py config --client codex --allowed-dir "/absolute/path/to/documents"
+
+# Print JSON for a Cursor or Claude Desktop MCP configuration.
+python3 scripts/setup_mcp.py config --client cursor --allowed-dir "/absolute/path/to/documents"
+python3 scripts/setup_mcp.py config --client claude-desktop --allowed-dir "/absolute/path/to/documents"
+```
+
+The `install` command creates/reuses this skill's `.venv` and calls its
+own Python's pip using `requirements-mcp.txt`. The `config` tool uses the
+**virtualenv executable path as typed**, including if it is a symlink to
+another binary. It never changes Codex/Cursor/Claude settings, silently grants
+permissions, copies local files, uploads anything or uses a remote transport.
+
+The `doctor` status is `pass` only if Python >= 3.11, the local stdio
+server and environment Python exist, the allowed directory appears accessible,
+and Pillow/pypdf/MCP SDK imports succeed in the selected virtualenv.
+It checks the OS permissions heuristically and cannot guarantee an active
+client connection. `needs_setup` reports individual checks with actionable
+`fix` messages. No files are altered by the doctor.
+
+Set `JECHULOK_ALLOWED_DIRS` to the **narrowest existing working directory**
+required. The startup and setup scripts reject noncanonical aliases in the
+setup-provided work directory. Use only absolute paths. Treat any generated
+configuration snippet as sensitive local information if a directory name
+reveals identity. MCP remains stdio only, with no exposed network API.
+
+**Important:** the installed MCP server is not automatically available in
+hosted cloud agents. A local-capable client must start it in the same filesystem
+environment where the documents exist. Consult `QUICKSTART.md` for step-by-step
+instructions and example prompts.
