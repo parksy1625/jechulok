@@ -35,6 +35,29 @@ python3 scripts/setup_mcp.py doctor --allowed-dir "/absolute/path/to/your/docume
 `needs_setup`이면 `checks`의 `fix`를 확인하세요.
 진단은 파일을 생성·삭제·변환하지 않으며 클라이언트 연결의 실제 성공까지 보증하지 않습니다.
 
+## 2-1. MCP 실제 연결 진단 (v1.1)
+
+기존 `doctor`는 Python 환경을 확인했지만 MCP 서버가 실제로 호출되는지는
+확인하지 않았습니다. 이제 다음 명령으로 서버를 로컬에서 실행하고,
+**14개 MCP 도구 목록과 합성 문장 규칙 분석 호출**을 검사할 수 있습니다.
+
+```bash
+python3 scripts/setup_mcp.py probe --allowed-dir "/absolute/path/to/your/documents"
+```
+
+설치 검사부터 실제 서버 응답까지 한 번에 확인하려면:
+
+```bash
+python3 scripts/setup_mcp.py status --allowed-dir "/absolute/path/to/your/documents"
+```
+
+성공 결과는 `"status": "pass"`, 실패 시에는 `code`와 `fix`를
+반환합니다. 이 명령은 실제 제출 파일을 열거나 처리하지 않습니다.
+`status=pass`는 **이 컴퓨터에서 로컬 MCP 서버와 통신할 수 있다는 뜻**이며,
+Codex·Cursor·Claude Desktop의 설정 적용이나 실제 서류 접수 성공을
+뜻하지 않습니다. 클라이언트 자체에서도 도구 목록과 합성 텍스트
+`parse_submission_rules` 호출을 확인해 주세요.
+
 ## 3. Codex에 연결
 
 ```bash
