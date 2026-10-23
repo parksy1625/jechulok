@@ -50,9 +50,11 @@
 
 ## v1.0 검증 기준
 
-GitHub Actions의 Python 3.11 및 3.13 작업은 다음을 검사합니다.
+GitHub Actions의 Ubuntu·macOS·Windows × Python 3.11·3.13 총 6개 작업은 다음을 검사합니다.
 
 - 의존성 호환성(`pip check`)과 Python 소스 컴파일
+- Ubuntu/Python 3.11에서 독립 가상환경을 실제로 새로 설치하고, 생성한
+  Codex TOML 설정으로 로컬 stdio MCP 클라이언트까지 연결
 - 기존 CLI/MCP 기능 회귀 및 실제 stdio MCP 클라이언트 연결
 - 공고 해석 → 파일 후보·출력명 추천 → 계획 미리보기 → 승인 없이는 실행
   금지 → 합성 이미지/PDF 파일 생성 → 최종 재검증 → HTML 미리보기/저장
