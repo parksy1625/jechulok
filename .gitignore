@@ -10,3 +10,8 @@
 .*.jechulok-*.jpg
 .*.jechulok-*.jpeg
 .*.jechulok-*.pdf
+
+# Private real-world evaluation corpus and local reports (never commit)
+.agents/skills/jechulok-submission/private-evaluation/
+**/*.notice-eval-private.jsonl
+**/*.notice-eval-private.json
