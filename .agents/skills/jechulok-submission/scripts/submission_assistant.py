@@ -1,4 +1,4 @@
-"""JeChulOK v1.6: stateless, guided MCP entry point.
+"""JeChulOK v1.7: stateless, user-centered guided MCP entry point.
 
 One tool surfaces one useful human-facing next action without guessing
 assignments, granting human approval, or bypassing preflight/locking.
@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 
 from guided_experience import guide_next_step
+from guided_clarity import explain_plan_blockers, missing_file_choices, notice_issues
 from review_workflow import review_plan, verify_package
 
 
@@ -69,7 +70,9 @@ def assist(
     approval_fingerprint: str | None = None,
     execute: bool = False,
     confirm_execution: bool = False,
+    source_directory: str | None = None,
     confine: Callable[..., Path],
+    confine_directory: Callable[[str], Path] | None = None,
     jobs: Any,
 ) -> dict[str, Any]:
     if action not in {"next", "start", "status", "cancel", "verify"}:
@@ -145,6 +148,29 @@ def assist(
             3 if follow in {"fix_plan", "approve_exact_plan"} else 5
         )
         extra: dict[str, Any] = {"guidance": guide}
+        if follow == "clarify_notice":
+            extra["notice_explanation"] = notice_issues(notice_text)
+        if follow == "choose_source":
+            # The caller must *explicitly* opt into a folder scan; never
+            # search home directories or infer an allowed root.
+            if source_directory is not None and confine_directory is None:
+                raise ValueError("A directory authorization callback is required")
+            extra["file_selection"] = missing_file_choices(
+                notice_text, assignments, source_directory,
+                confine_directory=confine_directory or _no_directory_search,
+            )
+            count = extra["file_selection"]["missing_count"]
+            if count > 1:
+                guide["question"] = (
+                    f"다음 {count}개 서류에 사용할 원본 파일을 각각 지정해 주세요. "
+                    "파일명 후보는 참고용이며 자동 선택하지 않습니다."
+                )
+        if follow == "fix_plan":
+            check = review_plan(notice_text, assignments or [], confine=confine)
+            extra["problem_explanation"] = explain_plan_blockers(check.get("blocked", []))
+            first_issue = extra["problem_explanation"]["issues"]
+            if first_issue:
+                guide["question"] = first_issue[0]["next_action"]
         if follow == "approve_exact_plan":
             preview = review_plan(notice_text, assignments or [], confine=confine)
             if preview["status"] != "awaiting_human_approval":
@@ -170,10 +196,13 @@ def assist(
         )
     preview = review_plan(notice_text, assignments, confine=confine)
     if preview["status"] != "awaiting_human_approval":
+        issue_explanation = explain_plan_blockers(preview.get("blocked", []))
+        first_issue = issue_explanation["issues"]
         return _envelope(
             "needs_review", 3, next_action="fix_plan",
-            question="작업 계획에 검토가 필요한 조건이 있습니다.",
-            guidance=preview,
+            question=first_issue[0]["next_action"] if first_issue
+                     else "작업 계획에 검토가 필요한 조건이 있습니다.",
+            guidance=preview, problem_explanation=issue_explanation,
         )
 
     current = plan_fingerprint(preview["plan"])
@@ -209,3 +238,8 @@ def assist(
         question="재검증 중 작업이 시작되지 않았습니다. 결과를 확인하고 새 미리보기를 승인해주세요.",
         job=result, execution_permitted=False,
     )
+
+
+def _no_directory_search(path: str) -> Path:
+    """Defensive no-op guard; never called unless a folder was explicitly given."""
+    raise ValueError("Directory search must be explicitly authorized")
