@@ -5,10 +5,39 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.8.0"
+  version: "1.9.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v1.9 — Local real-notice evaluation framework, never fabricated results
+
+The local evaluator `scripts/evaluate_real_v19.py` accepts an **external,
+private** JSONL corpus of legally reusable, manually redacted submission
+rules. This release **does not include** any real notices, real annotators,
+or real-world quality scores. Its value is a reproducible evaluation
+workflow ready for independently collected evidence.
+
+The input requires exactly two different human reviewer IDs and labels
+per notice (explicit parsed rules or ambiguous/needs_review). Disagreements
+are excluded until adjudicated by a different third reviewer. The evaluator
+reports aggregate agreement rate, field-value precision and recall,
+constraint omission/wrong-value rates, exact notice matches, unsafe
+acceptance of ambiguous notices and false blocking of valid notices.
+
+It validates mandatory reuse authorization and human privacy-review
+attestations, rejects duplicate cases/notices and obvious email, phone or
+resident-number patterns. These checks do **not** prove that a real notice
+is anonymized or redistributable. Never place actual corpus content in
+the GitHub repository or CI artifacts. Input is evaluated locally only,
+and output contains **aggregate counts**, not notice texts/IDs/reviewer
+names. Use `--strict` to require all annotation conflicts resolved.
+
+For repeatable CI only, an explicitly **synthetic** four-case JSONL fixture
+is provided; its results do not count as real-world evaluation.
+See REAL_EVALUATION.md for corpus schema, review protocol and metrics.
+No new MCP tool was added, and no file-generation permission changed.
+
 
 ## v1.8 — Evidence-based synthetic guidance regression evaluation
 
