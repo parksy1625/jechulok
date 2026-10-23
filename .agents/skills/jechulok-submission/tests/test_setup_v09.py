@@ -37,6 +37,20 @@ class SetupV09Tests(unittest.TestCase):
         self.assertEqual(config["env"]["JECHULOK_ALLOWED_DIRS"], str(self.root))
         self.assertNotIn("http", content)
 
+    def test_venv_python_symlink_is_not_resolved_to_system_python(self):
+        venv_root = self.root / "venv"
+        python = setup.venv_python(venv_root)
+        python.parent.mkdir(parents=True)
+        try:
+            python.symlink_to(Path(sys.executable))
+        except (OSError, NotImplementedError):
+            return
+        config = tomllib.loads(
+            setup.client_configuration("codex", python, self.root)
+        )["mcp_servers"]["jechulok"]
+        self.assertEqual(config["command"], str(python))
+        self.assertNotEqual(config["command"], str(python.resolve()))
+
     def test_generated_config_escapes_quotes_and_backslashes(self):
         odd_root = Path('/tmp/a"b\\windows\\path')
         for client in setup.CLIENTS:
