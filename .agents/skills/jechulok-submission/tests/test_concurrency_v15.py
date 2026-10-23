@@ -207,6 +207,31 @@ class MultiProcessLockTests(unittest.TestCase):
             time.sleep(.025)
         self.assertEqual(another.get(again["job_id"])["status"], "completed")
 
+    def test_many_completed_records_never_hide_an_interrupted_job(self):
+        journal = job_journal.JobJournal(self.journal_dir)
+        for n in range(40):
+            journal.write({
+                "schema": 1, "job_id": f"COMPLETED_JOB_{n:04d}_12345678",
+                "status": "completed", "completed": 1, "total": 1,
+                "pid": 999999999, "staging": [], "outputs": [],
+            })
+        active_id = "ZZ_INTERRUPTED_987654321"
+        journal.write({
+            "schema": 1, "job_id": active_id,
+            "status": "running", "completed": 0, "total": 1,
+            "pid": 999999999, "staging": [], "outputs": [],
+        })
+        manager = background_jobs.LocalJobManager(journal_root=self.journal_dir)
+        report = manager.review_recovery()
+        self.assertEqual(report["status"], "recovery_required")
+        self.assertEqual(report["interrupted_job_count"], 1)
+        self.assertEqual(report["interrupted_jobs"][0]["job_id"], active_id)
+        self.assertEqual(manager.start(
+            NOTICE, self.assignments, execute=True,
+            confirm_execution=True, confine=server._confined,
+        )["status"], "recovery_required")
+        self.assertFalse((self.root / "ready.jpg").exists())
+
     def test_review_is_refreshed_and_excludes_this_process_active_work(self):
         owner = background_jobs.LocalJobManager(journal_root=self.journal_dir)
         manager = background_jobs.LocalJobManager(journal_root=self.journal_dir)
