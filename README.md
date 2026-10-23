@@ -2,9 +2,33 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v1.5.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v1.6.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v1.6: AI가 한 단계씩 안내하는 대화형 제출 준비
+
+**새 MCP 도구 `assist_submission`** 하나에서 공고 확인 → 원본 지정 →
+계획 미리보기 → 사용자 승인 후 파일 생성 → 기술 검증까지 순서대로
+안내합니다. 기존 19개 도구는 모두 유지해 **20개 MCP 도구**를
+지원합니다.
+
+- 현재 필요한 **질문 한 개**와 전체 5단계 중 진행 위치를 제공합니다.
+- 공고가 모호하거나 원본·PDF 페이지가 부족하면 추측하지 않고
+  사용자에게 확인을 요청합니다.
+- 실행 전 입력·출력 파일 경로, PDF 페이지, 사진 자르기 방식을
+  표시하고 **SHA-256 계획 일치 검증값**을 반환합니다.
+- `action="start"`는 사용자 승인 후
+  `execute=true`·`confirm_execution=true`와 **일치하는
+  `approval_fingerprint`가 모두 있어야** 시작할 수 있습니다.
+  실제 작업은 OS 잠금 확보 후 다시 계획을 검사합니다.
+- `action="status"`, `action="cancel"`, `action="verify"`로
+  작업 조회·취소 요청·최종 파일 규격 재검증을 이어갑니다.
+
+**주의:** 계획 검증값은 사람의 승인을 인증하는 수단이나 파일
+내용 해시가 아닙니다. 사용자가 실제 계획을 보고 별도로 승인해야
+하며, **기술 검증 통과도 서류 내용·사진 구도·기관 접수의 통과를
+뜻하지 않습니다.** 웹사이트는 변경하지 않았습니다.
 
 ### v1.5: 다중 AI 클라이언트 충돌 방지 · 복구 안내 개선
 
@@ -173,10 +197,10 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v1.5 — AI가 직접 호출하는 로컬 도구
+## MCP v1.6 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
-`prepare_image`, `extract_pdf_pages`, `verify_submission` 등의 19개 도구를
+`prepare_image`, `extract_pdf_pages`, `verify_submission`, `assist_submission` 등의 20개 도구를
 호출할 수 있습니다. Python 3.11+와 MCP Python SDK v2가 필요합니다.
 
 ```bash
@@ -185,7 +209,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v1.5 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v1.6 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
