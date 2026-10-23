@@ -5,10 +5,20 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "0.9.0"
+  version: "1.0.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+**v1.0 안정화:** The 14 MCP tools remain compatible with v0.9. File paths must
+be canonical and may not pass through symlinked intermediate directories or
+`..` aliases. A file with an unrecognized extension or unreadable image/PDF
+structure must **never** be treated as technically compliant. After preparing a
+batch, independently re-inspect final files; keep all institutional/content
+checks manual. The new `tests/test_release_v10.py` exercises a real stdio MCP
+session from notice parsing to offline reporting using synthetic files.
+Read `SECURITY.md` at repository root for the explicit threat boundaries.
+
 
 Use the bundled Python CLI to prepare **local** submission files. Read the user's file paths and institution's exact requirements before executing. The tool never uploads files and never replaces an existing file.
 
