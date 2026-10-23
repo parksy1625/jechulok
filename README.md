@@ -22,9 +22,9 @@ python3 scripts/setup_mcp.py config --client codex --allowed-dir "/absolute/path
 마지막 명령은 안전한 설정 **복사용 텍스트**만 출력합니다. 사용자 승인 없이
 Codex 설정을 변경하지 않고, 설치 후에도 별도 MCP 연결 과정이 필요합니다.
 
-### 설치
+### CLI 단독 설치(대체 방법)
 
-Python 3.11 이상이 필요합니다.
+MCP까지 사용할 경우에는 위의 v0.9 가상환경 설치를 권장합니다. 다음은 CLI만 사용할 때의 수동 설치 방법입니다. Python 3.11 이상이 필요합니다.
 
 ```bash
 cd .agents/skills/jechulok-submission
