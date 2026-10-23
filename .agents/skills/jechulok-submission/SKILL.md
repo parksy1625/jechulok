@@ -5,10 +5,42 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v1.6 — Single guided entry point, no automatic consent
+
+For new conversational workflows, prefer the new **`assist_submission`**
+tool (20 tools total). It is a stateless local guide with five steps:
+1. Validate notice, ask the user to clarify ambiguous requirements.
+2. Request explicit file-to-item mappings (never pick files silently).
+3. Present the exact input/output/page/crop plan with
+   `approval_fingerprint` (SHA-256 of deterministic plan JSON).
+4. With **separate real human approval**, call
+   `assist_submission(action="start", notice_text=..., assignments=...,
+   approval_fingerprint=..., execute=true, confirm_execution=true)`.
+   The server recomputes the plan and checks the fingerprint both before
+   and after acquiring the existing cross-process writer lock. It refuses
+   changed plans and does not auto-reuse a previous approval.
+5. Poll with `assist_submission(action="status", job_id=...)` (or use
+   `action="cancel"` to request cooperative cancellation). After
+   completion call `assist_submission(action="verify", notice_text=...,
+   final_files=...)`. Technically passing files STILL require manual
+   content and submission-receipt checks.
+
+`action="next"` is read-only. `action="start"` without **both**
+execution flags AND a matching fingerprint is also read-only. A plan
+fingerprint proves only that the supplied paths/rules correspond to the
+last preview; it is NOT a signature, a file-content hash or reliable
+proof of actual human consent. The agent must show the preview to the user
+and obtain explicit approval. It must not synthesize approval itself.
+
+This tool stores no notices or assignments on disk; approved background
+jobs still use the v1.4/v1.5 private journal and protections.
+Existing MCP tools remain available unchanged.
+
 
 ## v1.5 — Cross-process write safety and understandable recovery
 
