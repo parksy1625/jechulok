@@ -22,7 +22,8 @@ VENV_PATH = SKILL_ROOT / ".venv"
 CLIENTS = ("codex", "cursor", "claude-desktop")
 
 
-def venv_python(root: Path = VENV_PATH) -> Path:
+def venv_python(root: Path | None = None) -> Path:
+    root = VENV_PATH if root is None else root
     if os.name == "nt":
         return root / "Scripts" / "python.exe"
     return root / "bin" / "python"
