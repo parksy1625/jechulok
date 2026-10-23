@@ -2,9 +2,29 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v1.3.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v1.4.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v1.4: 서버 중단 후 작업 복구 기록
+
+- 승인 후 시작한 작업의 상태를 작업 폴더 내부의 전용
+  `.jechulok-jobs/`에 최소 정보로 저장합니다. 원본 파일 내용이나
+  공고 전문·원본 입력 경로는 기록하지 않지만 **출력 경로는 기록**합니다.
+- JPG·PDF는 임시 파일로 만들고 기술 검사를 통과한 뒤
+  최종 경로에 안전하게 게시합니다. 최종 파일은 덮어쓰지 않습니다.
+- 비정상 종료 후 `list_interrupted_submission_jobs`로 중단된 기록과
+  남은 임시 파일·출력 파일을 확인할 수 있습니다.
+- `resolve_interrupted_submission_job`은 기본적으로 **미리보기**만
+  제공합니다. 사용자 확인 후 별도의 3가지 확인 옵션을 모두 전달해야
+  전용 임시 파일만 정리합니다. **최종 출력 파일은 삭제하지 않습니다.**
+- 복구 전에는 새 비동기 작업을 차단하며, 이전 승인을 자동으로
+  재사용하거나 중단된 작업을 자동 재실행하지 않습니다.
+- **한계:** 파일 여러 개의 게시를 운영체제 수준에서 하나의 원자적
+  거래로 보장하지 못합니다. 비정상 종료 시 일부 최종 파일이
+  남아 있을 수 있으므로 직접 검사해야 합니다.
+
+총 **19개 MCP 도구**를 지원합니다. 기존 웹사이트는 변경하지 않았습니다.
 
 ### v1.3: 실제 작업 진행 조회 · 취소 · 안전한 롤백
 
@@ -25,7 +45,7 @@
 확인한 후 재실행해야 합니다. 취소한 작업은 자동 재시작되지 않으며,
 새 계획에 대한 사용자 승인이 다시 필요합니다.
 
-총 **17개 로컬 MCP 도구**로 확장했으며, 기존 `prepare_submission_batch`
+총 **19개 로컬 MCP 도구**로 확장했으며, 기존 `prepare_submission_batch`
 동기식 API와 웹사이트는 변경하지 않았습니다.
 
 ### v1.2: 사진 변환 최적화 · 작업 시간 기록 · 실패 후 재시도 안내
@@ -135,10 +155,10 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v1.3 — AI가 직접 호출하는 로컬 도구
+## MCP v1.4 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
-`prepare_image`, `extract_pdf_pages`, `verify_submission` 등의 17개 도구를
+`prepare_image`, `extract_pdf_pages`, `verify_submission` 등의 19개 도구를
 호출할 수 있습니다. Python 3.11+와 MCP Python SDK v2가 필요합니다.
 
 ```bash
@@ -147,7 +167,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v1.3 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v1.4 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
