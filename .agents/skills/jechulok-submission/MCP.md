@@ -1,4 +1,4 @@
-# 제출OK MCP v1.6 — local stdio server
+# 제출OK MCP v1.7 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -686,3 +686,41 @@ private and manually inspect leftover final files after crashes.
 이 안내 도구 자체에는 세션 저장소가 없으며, 공고 텍스트도
 디스크에 추가 기록하지 않습니다. 사용자 데이터는 기존
 `JECHULOK_ALLOWED_DIRS`와 작업별 보호를 따릅니다.
+
+
+## v1.7 — Fewer user questions, explainable preflight errors
+
+The new optional `source_directory` parameter is supported by the
+existing `assist_submission` MCP tool; **20 tools** are still available.
+
+```json
+{
+  "action": "next",
+  "notice_text": "- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지",
+  "source_directory": "/allowed/submission-directory"
+}
+```
+
+Without `source_directory`, the tool **never scans** a directory. If
+missing source files are found, one question can request all missing
+item-to-file assignments together. If a directory is explicitly supplied,
+the scan is nonrecursive, bounded to 250 entries, skips symlinks, and
+inspects file *names, extensions and size metadata only*. The result's
+`file_selection.items[*].candidate_hints` contains no more than
+3 hints per item and includes `requires_manual_review=true` for each.
+It does not read contents, infer identity or auto-select any candidate.
+A directory outside `JECHULOK_ALLOWED_DIRS` is rejected.
+
+If the notice itself has ambiguous/shared conditions, returns
+`notice_explanation.issues` with deterministic codes, source line,
+bounded source evidence and direct human follow-up. **No candidate scan
+occurs before such a notice is clarified.** If a preview contains
+actual blocking errors, `problem_explanation.issues` presents static
+error codes, a short original reason excerpt and an actionable remedy.
+Both issue collections are limited to 5 visible items but keep an
+`issue_count` and `truncated` signal for longer notices.
+
+No new write paths, permission relaxations, automatic approval,
+institutional submissions or background synchronization were added.
+Explicit approvals, locked final preview verification, safe local
+processing and manual last-step acceptance remain required.
