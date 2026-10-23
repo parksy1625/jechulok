@@ -104,7 +104,9 @@ class GuideClarityV17Tests(unittest.TestCase):
     def test_outside_directory_and_symlinked_directory_are_rejected(self):
         with tempfile.TemporaryDirectory() as outside:
             with self.assertRaisesRegex(ValueError, "outside"):
-                self.guided(notice_text=NOTICE, source_directory=outside)
+                # macOS temporary folders often have /var -> /private/var
+                # aliases; canonicalize to test the outside-root rule.
+                self.guided(notice_text=NOTICE, source_directory=str(Path(outside).resolve()))
         linked = self.root / "linked"
         try:
             linked.symlink_to(self.root, target_is_directory=True)
