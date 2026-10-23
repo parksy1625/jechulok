@@ -64,23 +64,38 @@ class LocalJobManager:
     def _recovered_view(record: dict[str, Any]) -> dict[str, Any]:
         old = record["status"]
         interrupted = old in ACTIVE
+        alive = pid_is_alive(record.get("pid")) if interrupted else False
+        stages = [item for item in record["staging"]
+                  if isinstance(item, dict) and isinstance(item.get("stage"), str)]
+        outputs = [p for p in record["outputs"] if isinstance(p, str)]
+        final_present = sum(Path(p).exists() for p in outputs)
+        stage_present = sum(Path(item["stage"]).exists() for item in stages)
         return {
-            "status": "interrupted" if interrupted else old,
+            "status": "possibly_active" if interrupted and alive else
+                      "interrupted" if interrupted else old,
             "job_id": record["job_id"],
             "recovered_from_disk": True,
             "previous_status": old,
             "completed_items_before_interruption": record.get("completed", 0),
             "total_items": record.get("total", 0),
             "staging_files": [
-                {"item_id": item.get("item_id"), "filename": Path(item["stage"]).name,
+                {"item_id": item.get("item_id"),
+                 "filename": Path(item["stage"]).name,
                  "exists": Path(item["stage"]).exists()}
-                for item in record["staging"] if isinstance(item, dict) and isinstance(item.get("stage"), str)
+                for item in stages
             ],
             "output_files": [
                 {"filename": Path(p).name, "exists": Path(p).exists()}
-                for p in record["outputs"] if isinstance(p, str)
+                for p in outputs
             ],
-            "possibly_active_process": pid_is_alive(record.get("pid")) if interrupted else False,
+            "staging_file_count": stage_present,
+            "final_output_count": final_present,
+            "possibly_active_process": alive,
+            "next_action": (
+                "다른 서버가 실행 중일 수 있습니다. 해당 서버 상태를 먼저 확인하세요."
+                if alive else
+                "남은 최종 파일을 직접 검토한 후 임시 파일 정리 미리보기를 요청하세요."
+            ) if interrupted else "기존 결과 파일을 기술 조건에 따라 다시 확인하세요.",
             "requires_manual_review": interrupted,
             "reusable_approval": False,
             "institutional_submission_confirmed": False,
@@ -110,7 +125,10 @@ class LocalJobManager:
             self._recovered = {r["job_id"]: r for r in self._journal.scan()}
 
     def _has_unresolved_recovery(self) -> bool:
-        return any(r["status"] in ACTIVE for r in self._recovered.values())
+        return any(
+            r["status"] in ACTIVE and r["job_id"] not in self._jobs
+            for r in self._recovered.values()
+        )
 
     def start(
         self, notice_text: str, assignments: list[dict[str, Any]],
@@ -450,7 +468,13 @@ class LocalJobManager:
         """Read-only ordered recovery checklist; no destructive side effects."""
         with self._lock:
             self._refresh_recovered()
-            jobs = [self._recovered_view(x) for x in self._recovered.values() if x["status"] in ACTIVE]
+            # A live job owned by this MCP instance is not a crash recovery.
+            # Other processes' records may still need attention.
+            own_ids = set(self._jobs)
+            jobs = [
+                self._recovered_view(x) for x in self._recovered.values()
+                if x["status"] in ACTIVE and x["job_id"] not in own_ids
+            ]
             return {
                 "status": "recovery_required" if jobs else "clear",
                 "interrupted_jobs": jobs,
