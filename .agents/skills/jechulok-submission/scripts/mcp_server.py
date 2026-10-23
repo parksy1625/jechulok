@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v1.3). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v1.4). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -382,7 +382,11 @@ def create_submission_html_report(
     ))
 
 
-from background_jobs import manager as local_jobs
+from background_jobs import LocalJobManager
+
+# Private job journal resides in the first allowed local root; this code never
+# writes records until a separately approved job is started.
+local_jobs = LocalJobManager(journal_root=_roots()[0] / '.jechulok-jobs')
 
 @mcp.tool()
 def start_submission_job(
@@ -408,6 +412,29 @@ def get_submission_job(job_id: str) -> dict[str, Any]:
 def cancel_submission_job(job_id: str) -> dict[str, Any]:
     """Request cooperative cancellation of a local job; active operation finishes before rollback, then final status is cancelled. Does NOT immediately stop an encoder."""
     return _result(lambda: local_jobs.cancel(job_id))
+
+
+@mcp.tool()
+def list_interrupted_submission_jobs() -> dict[str, Any]:
+    """READ ONLY: list journaled jobs interrupted by a prior local MCP process. Never resume or delete any files."""
+    return _result(local_jobs.review_recovery)
+
+
+@mcp.tool()
+def resolve_interrupted_submission_job(
+    job_id: str,
+    cleanup_staging: bool = False,
+    confirm_cleanup: bool = False,
+    checked_final_outputs: bool = False,
+) -> dict[str, Any]:
+    """Preview by default; after explicit three-part confirmation remove ONLY this interrupted job's private staging files. Never touch final outputs or reuse approval."""
+    return _result(lambda: local_jobs.resolve_recovery(
+        job_id,
+        cleanup_staging=cleanup_staging,
+        confirm_cleanup=confirm_cleanup,
+        checked_final_outputs=checked_final_outputs,
+        confine=_confined,
+    ))
 
 
 if __name__ == "__main__":
