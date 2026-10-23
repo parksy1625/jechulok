@@ -1,4 +1,4 @@
-# 제출OK MCP v0.9 — local stdio server
+# 제출OK MCP v1.0 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -388,3 +388,28 @@ reveals identity. MCP remains stdio only, with no exposed network API.
 hosted cloud agents. A local-capable client must start it in the same filesystem
 environment where the documents exist. Consult `QUICKSTART.md` for step-by-step
 instructions and example prompts.
+
+
+## v1.0 stable — Integration and security checks
+
+Existing 14 MCP tools and their request contracts remain available. The
+v1.0 release is a **stability pass**, not a submission/auto-upload feature.
+
+Key changes:
+- MCP file access now rejects `..` path aliases and intermediate symlink
+  directories, even if they resolve inside an authorized root.
+- Verification never reports `pass` for a recognized document whose file
+  extension is unknown, or when an image/PDF integrity check reports an error.
+  Such cases are `unverified`; agents must stop and request correction.
+- Batch execution reauthorizes every source and destination after preflight
+  and just before each operation. If authorization fails after an earlier
+  item was generated, the earlier new output is rolled back.
+- Real stdio client regression covers discovery, parsing, filename proposals,
+  preflight, missing approval, actual file generation, final inspection,
+  HTML preview and explicit HTML output approval.
+- CI covers Python 3.11 and 3.13; it checks dependencies, source compilation,
+  all unit/integration tests and the read-only setup doctor.
+
+These tests use **synthetic documents**. A machine-checkable `pass` remains
+separate from content correctness, signature validity, visual requirements
+and institutional receipt. See repository-root `SECURITY.md` for details.
