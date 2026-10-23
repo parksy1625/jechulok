@@ -2,9 +2,27 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v1.4.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v1.5.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v1.5: 다중 AI 클라이언트 충돌 방지 · 복구 안내 개선
+
+같은 폴더에 접속한 MCP 프로세스들이 승인된 배치 파일을 동시에
+생성하지 않도록 **OS 배타적 파일 잠금**을 추가했습니다.
+
+- Codex·Cursor 등에서 같은 **첫 번째 허용 루트**를 지정한
+  v1.5 MCP 서버끼리는 배타적으로 작업합니다.
+- 다른 서버가 처리 중이면 `folder_writer_active`를 반환하고
+  **새 결과물을 생성하지 않습니다**. 종료 시 OS가 잠금을 해제합니다.
+- 새 작업 실행과 중단된 임시 파일 복구 정리 모두 잠금을 확인합니다.
+- 복구 목록은 중단 작업 수, 남은 임시·최종 파일 수, 실행 중일 수 있는
+  프로세스 여부와 **다음 단계 안내**를 보여줍니다.
+- 기존 **19개 MCP 도구**와 실행 승인·원본 보호 동작을 유지합니다.
+
+잠금은 동일 작업 루트를 설정한 v1.5 프로세스 간 협력적 보호이며,
+다른 프로그램이나 서로 다른 첫 번째 허용 폴더 간 충돌까지 막지는
+못합니다. 여러 파일의 게시가 완전한 원자적 거래가 되는 것도 아닙니다.
 
 ### v1.4: 서버 중단 후 작업 복구 기록
 
@@ -155,7 +173,7 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v1.4 — AI가 직접 호출하는 로컬 도구
+## MCP v1.5 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission` 등의 19개 도구를
@@ -167,7 +185,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v1.4 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v1.5 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
