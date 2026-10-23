@@ -2,9 +2,25 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v0.8.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v0.9.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### 처음 사용한다면: 설치부터 Codex 연결까지
+
+**[v0.9 빠른 시작 가이드](.agents/skills/jechulok-submission/QUICKSTART.md)**에서
+macOS·Windows 설치, Codex·Cursor·Claude Desktop 연결, 실제 테스트 방법을
+정리했습니다. 별도의 가상환경을 사용해 시스템 Python을 변경하지 않습니다.
+
+```bash
+cd .agents/skills/jechulok-submission
+python3 scripts/setup_mcp.py install --allowed-dir "/absolute/path/to/documents"
+python3 scripts/setup_mcp.py doctor --allowed-dir "/absolute/path/to/documents"
+python3 scripts/setup_mcp.py config --client codex --allowed-dir "/absolute/path/to/documents"
+```
+
+마지막 명령은 안전한 설정 **복사용 텍스트**만 출력합니다. 사용자 승인 없이
+Codex 설정을 변경하지 않고, 설치 후에도 별도 MCP 연결 과정이 필요합니다.
 
 ### 설치
 
@@ -44,7 +60,7 @@ GitHub Actions가 Python 3.11·3.13 환경에서 테스트합니다. CLI 스킬 
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v0.8 — AI가 직접 호출하는 로컬 도구
+## MCP v0.9 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission` 등의 14개 도구를
@@ -56,7 +72,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v0.8 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v0.9 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
@@ -163,3 +179,17 @@ v0.4 당시 MCP는 **8개 도구**였습니다. 기존 `main` 웹서비스 배�
 
 이번 변경은 로컬 Agent Skill/MCP에 한정되며 기존 웹사이트 배포는
 변경하지 않았습니다.
+
+
+### v0.9: 독립형 가상환경 설치 · MCP 연결 가이드 · 오류 진단
+
+- Python 3.11+ **표준 라이브러리만** 사용하는 `setup_mcp.py` 도우미 추가
+- `install`: 스킬 내부 `.venv`를 만들고 필수 MCP 의존성 설치
+- `doctor`: Python·MCP 모듈·허용 폴더 접근·실행 경로 등을 읽기 전용 검사
+- `config`: Codex용 TOML, Cursor·Claude Desktop용 JSON 연결 설정 출력
+- Windows 경로의 역슬래시·따옴표를 안전하게 이스케이프하고,
+  macOS·Linux 가상환경 Python 심볼릭 링크의 실행 경로를 유지
+- 연결 실패 원인별 해결 방법과 실제 대화 예제를 `QUICKSTART.md`에 추가
+
+기존 **MCP 도구 14개**는 유지합니다. 클라이언트 설정을 자동으로 수정하거나,
+사용자 동의 없이 파일을 변환하거나 업로드하지 않습니다. 기존 웹사이트는 변경하지 않았습니다.
