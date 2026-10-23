@@ -5,7 +5,7 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # JeChulOK Submission Agent Skill
@@ -21,6 +21,25 @@ Read `SECURITY.md` at repository root for the explicit threat boundaries.
 
 
 Use the bundled Python CLI to prepare **local** submission files. Read the user's file paths and institution's exact requirements before executing. The tool never uploads files and never replaces an existing file.
+
+## v1.1: Confirm real local MCP connectivity
+
+After local installation, run the `probe` command to connect to the actual
+stdio MCP server and call only `parse_submission_rules` on synthetic example
+text. The diagnostic **does not open the user's documents** and never changes
+a client configuration. To inspect both installation and handshake in one
+command, run:
+
+```bash
+python3 scripts/setup_mcp.py status --allowed-dir "/absolute/path/to/submission-files"
+```
+
+For separate checks use `doctor` for Python/dependency diagnostics and
+`probe` for live local MCP handshake. `status=pass` proves that this
+computer can start the MCP subprocess, *not* that the user's Codex/Cursor/Claude
+client has connected. If `needs_attention`, show the returned `code`,
+`fix` and any failing `doctor.checks`; do not guess, auto-write client
+settings, or ask the user to share real documents as a diagnostic.
 
 ## v0.9: Guided local installation
 
