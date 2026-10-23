@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v0.2). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v0.3). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -14,6 +14,7 @@ from typing import Any, Literal
 from mcp.server import MCPServer
 
 import jechulok as core
+from submission_rules import parse_requirements as extract_submission_rules
 
 mcp = MCPServer(
     "JeChulOK Submission",
@@ -23,6 +24,7 @@ mcp = MCPServer(
         "Never overwrite inputs. cover/crop requires user approval. "
         "Treat 'unverified' and 'info' as NOT compliant. "
         "Call verify_submission on every generated output. "
+        "Do not auto-edit needs_review requirements. "
         "Paths must be under JECHULOK_ALLOWED_DIRS. No file contents are uploaded."
     ),
 )
@@ -196,6 +198,69 @@ def verify_submission(
     """Independently re-open a final local file and validate at least one explicit technical requirement. A 'pass' does not guarantee institutional acceptance."""
     return _result(lambda: _inspect(input_path, expected_format, max_kb, width, height, max_pages, require_rules=True))
 
+
+
+
+@mcp.tool()
+def parse_submission_rules(requirements_text: str) -> dict[str, Any]:
+    """Parse Korean/English file submission requirements conservatively. Unknown conditions require review; never edits files."""
+    return _result(lambda: extract_submission_rules(requirements_text))
+
+
+@mcp.tool()
+def prepare_from_requirements(
+    input_path: str,
+    output_path: str,
+    requirements_text: str,
+    pages_to_extract: str | None = None,
+    mode: Mode = "contain",
+    crop_approved: bool = False,
+) -> dict[str, Any]:
+    """Prepare a local JPG or explicitly selected PDF pages from unambiguous text rules. Never overwrite; verify output; do not infer page selection."""
+    def perform() -> dict[str, Any]:
+        parsed = extract_submission_rules(requirements_text)
+        if parsed["status"] != "parsed":
+            return {"status": "needs_review", "message": "제출 조건이 모호하거나 자동 검증할 수 없습니다.", "parsed": parsed}
+        rules = parsed["rules"]
+        fmt = rules["expected_format"]
+        if fmt not in {"jpg", "pdf"}:
+            return {"status": "needs_review", "message": "단일 JPG 또는 PDF 형식 조건이 필요합니다.", "parsed": parsed}
+        if fmt == "pdf" and not pages_to_extract:
+            return {"status": "needs_review", "message": "삭제할 페이지는 임의로 선택하지 않습니다. pages_to_extract를 지정하세요.", "parsed": parsed}
+        if fmt == "jpg" and pages_to_extract:
+            return {"status": "needs_review", "message": "사진에 PDF 페이지 추출 범위를 지정할 수 없습니다.", "parsed": parsed}
+        if mode not in ("contain", "cover"):
+            raise ValueError("mode must be contain or cover")
+        if mode == "cover" and crop_approved is not True:
+            raise ValueError("Center crop needs explicit user approval")
+        source = _confined(input_path)
+        dest = _confined(output_path, for_output=True)
+        if source == dest:
+            raise ValueError("Original files may not be overwritten")
+        meta = core.info_for(core.safe_file(str(source)))
+        if core.evaluation(meta)["status"] == "fail":
+            return {"status": "error", "message": "원본 확장자와 실제 파일 형식이 맞지 않습니다."}
+        if fmt == "jpg":
+            if meta["format"] not in {"jpg", "png", "webp"}:
+                return {"status": "needs_review", "message": "JPG, PNG, WebP 이미지만 JPG로 준비할 수 있습니다.", "parsed": parsed}
+            args = argparse.Namespace(output=str(dest), width=rules["width"], height=rules["height"],
+                                      max_kb=rules["max_kb"], mode=mode)
+            prepared = core.prepare_image(core.safe_file(str(source)), args)
+        else:
+            args = argparse.Namespace(output=str(dest), pages=pages_to_extract,
+                                      max_kb=rules["max_kb"], max_pages=rules["max_pages"])
+            prepared = core.prepare_pdf(core.safe_file(str(source)), args)
+        verified = _inspect(str(dest), expected_format=fmt, max_kb=rules["max_kb"],
+                            width=rules["width"], height=rules["height"],
+                            max_pages=rules["max_pages"], require_rules=True)
+        if verified["status"] != "pass":
+            dest.unlink(missing_ok=True)
+            return {"status": "error", "message": "결과 파일 재검증 실패. 생성한 파일을 삭제했습니다.",
+                    "verification": verified, "parsed": parsed}
+        return {"status": "pass", "output": str(dest), "preparation": prepared,
+                "verification": verified, "parsed": parsed,
+                "limitations": "기술 조건만 검증합니다. 사진 구도·내용·기관 접수는 수동 확인이 필요합니다."}
+    return _result(perform)
 
 if __name__ == "__main__":
     # Local stdio only. Do not expose arbitrary user files via an unauthenticated HTTP endpoint.

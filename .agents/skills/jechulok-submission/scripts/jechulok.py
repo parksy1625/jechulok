@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from submission_rules import parse_requirements
+
 try:
     from PIL import Image, ImageOps, UnidentifiedImageError
     from pypdf import PdfReader, PdfWriter
@@ -266,6 +268,8 @@ def positive(value: str) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="JeChulOK local submission-file checker and preparer (no network, no overwrite)")
     actions = parser.add_subparsers(dest="command", required=True)
+    rule = actions.add_parser("parse-rules", help="Parse Korean submission conditions; does not modify files")
+    rule.add_argument("--text", required=True)
     check = actions.add_parser("check", help="Inspect file and evaluate explicit constraints")
     check.add_argument("--input", required=True)
     check.add_argument("--format", choices=["any", "jpg", "png", "webp", "gif", "pdf"], default="any")
@@ -292,16 +296,19 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        file = safe_file(args.input)
-        if args.command == "check":
-            result = file_report(file, args)
-        elif args.command == "prepare-image":
-            result = prepare_image(file, args)
+        if args.command == "parse-rules":
+            result = parse_requirements(args.text)
         else:
-            result = prepare_pdf(file, args)
+            file = safe_file(args.input)
+            if args.command == "check":
+                result = file_report(file, args)
+            elif args.command == "prepare-image":
+                result = prepare_image(file, args)
+            else:
+                result = prepare_pdf(file, args)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         state = result["status"]
-        return 2 if state == "fail" else 3 if state == "unverified" else 0
+        return 2 if state == "fail" else 3 if state in {"unverified", "needs_review", "no_rules"} else 0
     except (ValueError, OSError, Image.DecompressionBombError, UnidentifiedImageError) as exc:
         print(json.dumps({"status": "error", "message": str(exc)}, ensure_ascii=False))
         return 1
