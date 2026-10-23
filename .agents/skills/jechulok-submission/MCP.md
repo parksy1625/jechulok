@@ -1,4 +1,4 @@
-# 제출OK MCP v1.2 — local stdio server
+# 제출OK MCP v1.3 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -47,6 +47,9 @@ Important: The default allowed directory is the MCP process's working directory,
 | `verify_submission_package` | Re-open final files and validate technical constraints with pending human checklist | No |
 | `guide_submission_workflow` | Return one prioritized, concise next user question without automatic approval | No |
 | `create_submission_html_report` | Preview or explicitly save a standalone offline HTML technical report | Only with separate dual approval |
+| `start_submission_job` | Plan and optionally start an asynchronously pollable local batch | Only with both flags and separate real user approval |
+| `get_submission_job` | Poll per-file job progress and final outcome | No |
+| `cancel_submission_job` | Request cooperative cancellation and batch rollback | No |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -489,3 +492,54 @@ The benchmark is also checked in CI on Ubuntu/Python 3.11; other 5 CI
 combinations run the full functional and security regression suite.
 Actual institution acceptance, photo composition and signed PDF semantics
 still require manual review.
+
+
+## v1.3 — Cooperative background jobs, progress and cancel
+
+Local MCP now exposes **17 tools**. The three new tools are for batching only:
+
+```json
+{
+  "tool": "start_submission_job",
+  "arguments": {
+    "notice_text": "- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지",
+    "assignments": [
+      {"item_id": "item_01", "input_path": "/allowed/input.png", "output_path": "/allowed/ready.jpg"},
+      {"item_id": "item_02", "input_path": "/allowed/input.pdf", "output_path": "/allowed/ready.pdf", "pages_to_extract": "1-3"}
+    ],
+    "execute": false,
+    "confirm_execution": false
+  }
+}
+```
+
+Dry run (`execute=false`) returns `status=planned` and **starts no job**.
+No execute authorization is implied by MCP input alone: first show the exact
+dry-run plan to the human user, then obtain permission. Only then call with
+**both** true flags to start a job and receive its random `job_id`.
+
+Poll `get_submission_job({"job_id":"..."})` for the real worker state
+`queued`, `running`, `cancel_requested`, `completed`, `cancelled`,
+or `failed`. The response contains `progress` with the current item ID,
+completed items, total items and percent, plus bounded per-item event markers.
+This updates via **separate polling requests**; it is not a native MCP push
+notification and does not provide byte-by-byte per-file percentages.
+
+Call `cancel_submission_job({"job_id":"..."})` to request cancellation.
+An ongoing image/PDF encode cannot be interrupted safely in the middle; once
+the active item finishes, the worker rolls back newly created batch output
+files and reports terminal `cancelled`. Until the terminal state is visible,
+avoid editing, renaming or submitting the batch files. If work already finished
+before cancellation took effect, its terminal status may remain `completed`.
+
+The manager permits one active job per local stdio server and keeps at most
+16 recent records in volatile memory. Closing the MCP server loses the job
+registry and cannot guarantee cleanup of a worker interrupted by process
+termination. Never assume that old output paths are safe to reuse; inspect
+the filesystem, run a new preflight and get explicit user approval before a
+retry. Previously existing files are never intentionally overwritten.
+
+`prepare_submission_batch` remains synchronous with unchanged default
+dry-run and double-approval flags. Existing verification and institutional
+acceptance limitations still apply. No remote HTTP server, automatic upload
+or persistent job history has been introduced.
