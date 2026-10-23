@@ -5,7 +5,7 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "0.7.0"
+  version: "0.8.0"
 ---
 
 # JeChulOK Submission Agent Skill
@@ -25,7 +25,7 @@ If dependencies are unavailable, explain that setup failed; do not claim that a 
 
 ## MCP integration (v0.5, optional)
 
-An MCP-capable agent may call twelve local stdio tools. The original tools include `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
+An MCP-capable agent may call fourteen local stdio tools. The original tools include `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`; multi-file tools are described below. If the JeChulOK MCP
 server is connected, prefer these tools over shell commands. See [MCP.md](MCP.md)
 for installation, allowed-directory settings and the security boundary.
@@ -137,6 +137,31 @@ Even `technical_pass` leaves every manual checklist item unchecked.
 Never claim `ready_to_submit`, accepted/received by an institution, correct
 photo composition, digital signature preservation, or validated document
 content. No actual form submission is implemented.
+
+## v0.8: Prioritized next question and private offline report
+
+Prefer `guide_submission_workflow` when the user needs a conversational
+walkthrough rather than a raw MCP tool protocol. It returns a single,
+prioritized `question` and `next_action` using only the current notice,
+the user-confirmed file mapping and (when supplied) the final files.
+Never treat `awaiting_human_approval` as approval, and never select source
+files or PDF pages without human input. Only after real approval of the
+**exact** dry-run may you execute with the previous double-confirmed batch
+call. The guided tool **never changes files**.
+
+When the user wants an offline record, call
+`create_submission_html_report(notice_text, files, output_path)` to preview
+the current final-file inspection without writing. Show that preview and the
+planned `.html` output path to the user. Only with explicit permission save
+via `execute=true, confirm_execution=true`. The new HTML is local-only and
+cannot overwrite an existing file. It includes basenames, technical statuses,
+repair hints and unchecked human review steps, never file contents, full
+filesystem paths or upload links. It may contain personal information inside
+filenames. Do not send it to a server.
+
+Even if `technical_pass` is reported, do not claim submitted/accepted.
+Institution policies, applicant identity, image composition, PDF signature
+validity and receipt remain manually checked.
 
 ## Decision flow
 
