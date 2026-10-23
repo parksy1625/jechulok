@@ -53,6 +53,7 @@ jobs:
           data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-eval-v18.json").read_text())
           assert data["dataset_type"] == "synthetic_only"
           assert data["evaluated_cases"] == 100
+          assert data["distinct_synthetic_notices"] == 100
           assert data["passed_cases"] == 100, data["failures"]
           assert len(data["families"]) == 4
           assert data["real_world_accuracy"] is None
