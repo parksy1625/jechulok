@@ -40,6 +40,7 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Read-only setup doctor smoke check
         working-directory: .agents/skills/jechulok-submission
+        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -53,6 +54,7 @@ jobs:
           PY
       - name: Verify Agent Skill frontmatter
         working-directory: .agents/skills/jechulok-submission
+        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
