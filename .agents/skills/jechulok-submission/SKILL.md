@@ -5,10 +5,38 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v1.2: Fast JPEG pass, timing and safe retry
+
+When a photo has an explicit maximum KB size, the encoder first tries its
+highest supported JPEG quality (95). If that **already meets** the size limit,
+it needs only one encode. Otherwise it retains the lower-quality binary
+search and verifies the resulting output from disk. `prepare_image` returns
+`encoding_attempts` and `duration_ms`; `prepare_pdf` returns
+`duration_ms`. Avoid promising a percentage performance increase from a
+single timing.
+
+`prepare_submission_batch` retains its default dry-run and double-confirmation.
+Its result now includes a **completed-response snapshot**, `progress`, with
+`phase`, `completed_items`, `total_items`, `percent` and
+`live_streaming=false`, plus `duration_ms` and per-item durations for
+successful items. This is not a live progress event subscription; an MCP caller
+receives it only once the request finishes.
+
+On blocked or failed batch results, show `retry_guidance`. Never automatically
+retry, reuse former user consent, overwrite previous files or guess PDF pages.
+After failure, inspect the filesystem for unexpected outputs, repair the
+cause, run a new dry-run and obtain user approval for the revised exact plan.
+
+For reproducible, **synthetic-only** local measurements, run
+`python scripts/benchmark_v12.py`. Its temporary fixtures are deleted;
+real user files are never measured by this script.
+
+
 
 **v1.0 안정화:** The 14 MCP tools remain compatible with v0.9. File paths must
 be canonical and may not pass through symlinked intermediate directories or
