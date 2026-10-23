@@ -2,7 +2,7 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill v0.1.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v0.2.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
 
@@ -42,3 +42,23 @@ python -m unittest discover -s tests -v
 GitHub Actions가 Python 3.11·3.13 환경에서 테스트합니다. CLI 스킬 폴더는 MIT 라이선스이며, 이 라이선스가 저장소의 별도 웹서비스 소스나 다른 프로젝트에 자동으로 적용되지는 않습니다.
 
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
+
+
+## MCP v0.2 — AI가 직접 호출하는 로컬 도구
+
+기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
+`prepare_image`, `extract_pdf_pages`, `verify_submission` 네 가지 도구를
+호출할 수 있습니다. Python 3.11+와 MCP Python SDK v2가 필요합니다.
+
+```bash
+cd .agents/skills/jechulok-submission
+python -m pip install -r requirements-mcp.txt
+```
+
+Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
+**[MCP v0.2 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+
+서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
+**GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
+AI 클라이언트에서 MCP 서버를 연결해야 합니다. JPG 생성 후에는 기술적 규격을
+다시 검사하며, 사진을 자르는 작업은 별도로 승인받도록 설계했습니다.

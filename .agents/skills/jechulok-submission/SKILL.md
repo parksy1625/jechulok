@@ -5,7 +5,7 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # JeChulOK Submission Agent Skill
@@ -22,6 +22,25 @@ python scripts/jechulok.py --help
 ```
 
 If dependencies are unavailable, explain that setup failed; do not claim that a file was processed. Processing works offline after installation.
+
+## MCP v0.2 integration (optional)
+
+An MCP-capable agent may call four local stdio tools directly: `check_file`,
+`prepare_image`, `extract_pdf_pages`, `verify_submission`. If the JeChulOK MCP
+server is connected, prefer these tools over shell commands. See [MCP.md](MCP.md)
+for installation, allowed-directory settings and the security boundary.
+
+```bash
+python -m pip install -r requirements-mcp.txt
+python scripts/mcp_server.py  # launched by your MCP host; not a network server
+```
+
+If the MCP server is unavailable, continue using the existing CLI. Do **not**
+claim that simply cloning GitHub attaches the MCP server to ChatGPT or Codex.
+The MCP server only accepts local paths within the configured allowed folders,
+never overwrites files, and requires `crop_approved=true` for center-crop jobs.
+Always run `verify_submission` on the produced file. A `pass` checks only the
+user's explicitly provided technical requirements.
 
 ## Decision flow
 

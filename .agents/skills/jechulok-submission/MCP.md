@@ -1,0 +1,70 @@
+# 제출OK MCP v0.2 — local stdio server
+
+**Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
+
+## Install
+
+Python 3.11+:
+
+```bash
+cd .agents/skills/jechulok-submission
+python -m pip install -r requirements-mcp.txt
+python scripts/mcp_server.py
+```
+
+The last command intentionally waits for an MCP client on **stdio**; no text appears in the shell. Use an MCP host to launch it instead of launching it manually.
+
+## Connect from Codex
+
+Edit `~/.codex/config.toml` (replace both absolute paths below with paths on **your computer**):
+
+```toml
+[mcp_servers.jechulok]
+command = "/absolute/path/to/python"
+args = ["/absolute/path/to/jechulok/.agents/skills/jechulok-submission/scripts/mcp_server.py"]
+env = { JECHULOK_ALLOWED_DIRS = "/absolute/path/to/workspace" }
+```
+
+Alternatively use the Codex CLI to register a local stdio MCP server if your installed CLI supports the option. Verify with `codex mcp list`.
+
+Important: The default allowed directory is the MCP process's working directory, which depends on the host. Set `JECHULOK_ALLOWED_DIRS` explicitly for predictable behavior. Paths supplied to tools must exist **within** an allowed directory. Multiple roots are separated by the OS path delimiter (`:` on macOS/Linux, `;` on Windows). Neither symlinks nor output overwrites are supported.
+
+## Exposed MCP tools
+
+| Tool | Purpose | Mutates files? |
+|---|---|---|
+| `check_file` | Detect real file signature, bytes, image pixels or PDF pages and check specified conditions | No |
+| `prepare_image` | JPG/PNG/WebP → new JPG, exact pixels, optional max KB | Creates new file |
+| `extract_pdf_pages` | Create a new PDF with 1-based range like `2-4,7` | Creates new file |
+| `verify_submission` | Reopen output and verify **at least one** explicit condition | No |
+
+All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
+
+`max_kb` is measured in **KiB**: 1 KB = 1,024 bytes. The original input is never overwritten. Each tool returns a structured object; `status: "pass"` represents only the explicit technical rules, not successful acceptance by an institution. `status: "info"`, `"unverified"` or `"error"` must **never** be called a pass.
+
+### Recommended agent flow
+
+1. Read the exact submission conditions provided by the user; do not infer institution-specific rules.
+2. `check_file(input_path, expected_format="jpg", width=300, height=400, max_kb=500)`.
+3. If not `pass`, call `prepare_image` with a new output path (or `extract_pdf_pages` for PDF). Only crop if explicitly approved.
+4. `verify_submission` with **the same rules** on the generated file.
+5. Return output path, checked conditions and warnings. If unverified, explain which requirement needs manual validation.
+
+### Boundaries and limitations
+
+- Inputs up to 50 MiB, PDF extraction up to 20 MiB; PDF selection maximum 300 pages.
+- JPG / PNG / WebP input for image preparation; conversion to HEIC / AVIF or OCR is unavailable.
+- PDF extraction may strip interactive forms, bookmarks, attachments or valid digital signatures.
+- Portrait positioning, white background compliance, dimensions expressed in centimeters, content accuracy and website-specific acceptance are **not** verified.
+- This is a local-tool integration. **Not** a remotely reachable ChatGPT connector or an automatically installed GitHub Skill.
+- Host applications determine whether and when to approve local filesystem access. Limit `JECHULOK_ALLOWED_DIRS` to folders you intend the agent to use.
+
+## Tests
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The repository's GitHub Actions checks both the CLI and the MCP layer on Python 3.11 and 3.13.
+
+Official MCP SDK: https://py.sdk.modelcontextprotocol.io/
