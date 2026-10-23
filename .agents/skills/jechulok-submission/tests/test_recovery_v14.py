@@ -189,6 +189,16 @@ class DurableRecoveryV14Tests(unittest.TestCase):
         self.assertEqual(self.ready.read_bytes(), before)
         self.assertFalse(result["final_outputs_will_be_deleted"])
 
+    def test_pid_check_is_readonly_on_all_platforms(self):
+        self.assertFalse(job_journal.pid_is_alive(999999999))
+        if os.name == "nt":
+            # Regression: os.kill(pid, 0) can interrupt the Windows Python
+            # process itself. The new query must use kernel32 only.
+            with patch.object(job_journal.os, "kill", side_effect=AssertionError("signal sent")):
+                self.assertTrue(job_journal.pid_is_alive(os.getpid()))
+        else:
+            self.assertTrue(job_journal.pid_is_alive(os.getpid()))
+
     def test_alive_owner_refuses_deletion(self):
         job_id, stage = self._seed_interrupted(pid=os.getpid())
         recovered = background_jobs.LocalJobManager(journal_root=self.state)
