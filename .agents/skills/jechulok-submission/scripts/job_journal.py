@@ -5,6 +5,7 @@ file contents, raw source paths, or reusable approvals. No auto-resume.
 """
 from __future__ import annotations
 
+import errno
 import json
 import os
 from pathlib import Path
@@ -136,6 +137,13 @@ def pid_is_alive(pid: Any) -> bool:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
-    except (PermissionError, OSError):
+    except PermissionError:
+        return True
+    except OSError as exc:
+        # Windows: ERROR_INVALID_PARAMETER (87) for nonexistent PIDs.
+        # POSIX: ESRCH when no such process exists. All other errors
+        # are treated conservatively as possibly alive.
+        if exc.errno == errno.ESRCH or getattr(exc, "winerror", None) == 87:
+            return False
         return True
     return True
