@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v1.7 빠른 시작
+# 제출OK Agent Skill + MCP v1.8 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -239,3 +239,23 @@ AI가 안내 모드에서 파일 선택을 요청할 때 다음과 같이 말할
 
 파일 생성·PDF 페이지 추출·자르기 승인 절차는 v1.6과 동일합니다.
 안내 개선이 사용자 승인이나 접수 완료를 대신하지 않습니다.
+
+
+## 11. 안내 품질 자동 검사하기 (v1.8)
+
+실제 개인정보를 입력하거나 파일을 업로드하지 않고 합성 공고
+100건에 대한 품질·안전성 회귀 검사를 실행합니다.
+
+```bash
+cd .agents/skills/jechulok-submission
+python scripts/evaluate_v18.py --check
+```
+
+출력 JSON의 evaluated_cases = 100 및 distinct_synthetic_notices = 100을
+확인하세요. status = pass 이면 **해당 합성 테스트 100개**가 모두
+사전 정의된 기대 결과를 만족했다는 뜻입니다. 실제 기관 공고
+해석 정확도 100% 또는 지원 서류가 모두 접수된다는 뜻은 아닙니다.
+
+GitHub Actions에서도 평가 JSON을 jechulok-eval-v18-synthetic
+아티팩트로 제공합니다. 평가 방법과 해석 한계는 EVALUATION.md를
+참고하세요. 원본 파일이나 개인 제출 공고는 테스트에 사용하지 않습니다.
