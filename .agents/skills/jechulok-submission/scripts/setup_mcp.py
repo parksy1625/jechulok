@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK v0.9 installation, local diagnostics and opt-in MCP client config.
+"""JeChulOK v1.1 installation, local diagnostics and opt-in MCP client config.
 
 Standard-library only. Importing the module never installs dependencies,
 edits Codex/Claude/Cursor settings, or launches the MCP server.
@@ -20,6 +20,7 @@ SERVER_SCRIPT = SKILL_ROOT / "scripts" / "mcp_server.py"
 REQUIREMENTS = SKILL_ROOT / "requirements-mcp.txt"
 VENV_PATH = SKILL_ROOT / ".venv"
 CLIENTS = ("codex", "cursor", "claude-desktop")
+PROBE_SCRIPT = SKILL_ROOT / "scripts" / "connection_probe.py"
 
 
 def venv_python(root: Path | None = None) -> Path:
@@ -169,12 +170,80 @@ def install(allowed_root: Path) -> dict[str, object]:
     }
 
 
+
+def probe_connection(allowed_root: Path, python_path: Path, *, timeout: int = 35) -> dict[str, object]:
+    """Invoke isolated subprocess; probe never reads user files or changes config."""
+    if not python_path.is_file():
+        return {
+            "status": "needs_setup", "code": "venv_missing",
+            "fix": "Run install --allowed-dir YOUR_FOLDER first.",
+            "client_config_modified": False, "files_processed": 0,
+        }
+    if not PROBE_SCRIPT.is_file() or not SERVER_SCRIPT.is_file():
+        return {
+            "status": "needs_setup", "code": "server_missing",
+            "fix": "Restore JeChulOK local scripts and retry.",
+            "client_config_modified": False, "files_processed": 0,
+        }
+    try:
+        outcome = subprocess.run(
+            [str(python_path), str(PROBE_SCRIPT), "--allowed-dir", str(allowed_root)],
+            cwd=str(SKILL_ROOT), capture_output=True, text=True,
+            encoding="utf-8", timeout=timeout, check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "needs_attention", "code": "connection_timeout",
+            "fix": "MCP server did not answer in time. Verify your virtual environment and local security policies.",
+            "client_config_modified": False, "files_processed": 0,
+        }
+    except OSError:
+        return {
+            "status": "needs_attention", "code": "python_launch_failed",
+            "fix": "The virtualenv Python could not launch. Recreate the .venv using install.",
+            "client_config_modified": False, "files_processed": 0,
+        }
+    try:
+        result = json.loads(outcome.stdout.strip())
+    except (json.JSONDecodeError, TypeError):
+        return {
+            "status": "needs_attention", "code": "unexpected_probe_output",
+            "fix": "The child process returned no valid JSON. Confirm the correct Python/MCP SDK and reinstall if needed.",
+            "client_config_modified": False, "files_processed": 0,
+        }
+    if not isinstance(result, dict) or result.get("status") not in {
+        "pass", "needs_attention", "needs_setup"
+    }:
+        return {
+            "status": "needs_attention", "code": "invalid_probe_result",
+            "fix": "The local MCP handshake returned an invalid result. Check installation.",
+            "client_config_modified": False, "files_processed": 0,
+        }
+    if outcome.returncode != 0 and result.get("status") == "pass":
+        return {
+            "status": "needs_attention", "code": "probe_exit_mismatch",
+            "fix": "The probe exited abnormally. Check installation.",
+            "client_config_modified": False, "files_processed": 0,
+        }
+    # Never expose arbitrary child-process fields (including potential paths).
+    return {
+        "status": result["status"],
+        "code": str(result.get("code", "probe_unknown"))[:64],
+        "tool_count": result.get("tool_count"),
+        "missing_tools": result.get("missing_tools", [])[:20] if isinstance(result.get("missing_tools", []), list) else [],
+        "fix": str(result.get("fix", ""))[:300] or None,
+        "mcp_transport": "local_stdio",
+        "client_config_modified": False,
+        "files_processed": 0,
+        "limitation": "Local MCP handshake only. Does not verify whether Codex/Cursor/Claude Desktop loaded its configuration.",
+    }
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="JeChulOK local-only MCP setup. Never changes client settings."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("install", "doctor", "config"):
+    for command in ("install", "doctor", "config", "probe"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--allowed-dir", required=True,
                          help="Existing canonical local directory containing your submission files")
@@ -198,6 +267,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "config":
             print(client_configuration(args.client, venv_python(), root), end="")
             return 0
+        if args.command == "probe":
+            result = probe_connection(root, venv_python())
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0 if result["status"] == "pass" else 1
         return 2
     except (ValueError, OSError, RuntimeError) as exc:
         print("JeChulOK setup: " + str(exc), file=sys.stderr)
