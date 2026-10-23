@@ -153,6 +153,8 @@ class V08Tests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.report.read_bytes(), original)
 
     def test_html_escapes_hostile_filenames_and_labels(self):
+        if os.name == "nt":
+            self.skipTest("Windows prohibits angle brackets in filenames")
         # Labels in notice are restricted to recognized kinds. User filename is
         # not trusted, so special HTML characters must be escaped.
         self._prepare()
