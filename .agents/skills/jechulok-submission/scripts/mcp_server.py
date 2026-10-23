@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v0.6). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v0.7). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -295,8 +295,10 @@ def prepare_submission_batch(
     confirm_execution: bool = False,
 ) -> dict[str, Any]:
     """Preflight all explicit item_id/file mappings. Dry run by default; actual writes need execute=true and confirm_execution=true. Never guess page ranges or overwrite files."""
-    return _result(lambda: prepare_batch(notice_text, assignments, execute=execute,
-                                         confirm_execution=confirm_execution, confine=_confined))
+    return _result(lambda: batch_guidance(prepare_batch(
+        notice_text, assignments, execute=execute,
+        confirm_execution=confirm_execution, confine=_confined,
+    )))
 
 
 from file_candidates import suggest_files
@@ -324,6 +326,26 @@ def suggest_submission_output_paths(
         notice_text, assignments, output_directory,
         confine=_confined, confine_directory=_confined_directory,
     ))
+
+
+from review_workflow import batch_guidance, review_plan, verify_package
+
+@mcp.tool()
+def review_submission_plan(
+    notice_text: str,
+    assignments: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Read-only preflight: list unresolved rules, exact paths, manual approvals and safe remediation steps. NEVER grants execution permission."""
+    return _result(lambda: review_plan(notice_text, assignments, confine=_confined))
+
+
+@mcp.tool()
+def verify_submission_package(
+    notice_text: str,
+    files: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Re-open *final* locally selected files, independently verify explicit technical rules, and return a human-only submission checklist. NEVER submits files."""
+    return _result(lambda: verify_package(notice_text, files, confine=_confined))
 
 
 if __name__ == "__main__":
