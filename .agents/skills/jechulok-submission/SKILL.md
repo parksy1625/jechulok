@@ -38,7 +38,7 @@ For installation walkthrough and troubleshooting see `QUICKSTART.md`.
 The installer may access the internet only when an individual user
 explicitly runs the `install` command to obtain Python dependencies.
 
-## Setup
+## CLI-only setup (alternative)
 
 From this skill directory (`.agents/skills/jechulok-submission/`):
 
@@ -49,7 +49,7 @@ python scripts/jechulok.py --help
 
 If dependencies are unavailable, explain that setup failed; do not claim that a file was processed. Processing works offline after installation.
 
-## MCP integration (v0.5, optional)
+## MCP integration (v0.9, optional)
 
 An MCP-capable agent may call fourteen local stdio tools. The original tools include `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`; multi-file tools are described below. If the JeChulOK MCP
