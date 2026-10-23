@@ -52,6 +52,39 @@ jobs:
           assert result['config_modified'] is False
           print('Setup doctor smoke check OK')
           PY
+      - name: Fresh venv install and real stdio MCP smoke (Linux 3.11)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        shell: bash
+        working-directory: .agents/skills/jechulok-submission
+        run: |
+          python scripts/setup_mcp.py install --allowed-dir "$PWD"
+          python scripts/setup_mcp.py doctor --allowed-dir "$PWD"
+          python scripts/setup_mcp.py config --client codex --allowed-dir "$PWD" > "$RUNNER_TEMP/jechulok-codex.toml"
+          python - <<'PY'
+          import asyncio
+          import os
+          import tomllib
+          from pathlib import Path
+          from mcp import Client, StdioServerParameters
+
+          data = tomllib.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-codex.toml").read_text())
+          config = data["mcp_servers"]["jechulok"]
+          assert Path(config["command"]).is_file()
+          assert Path(config["args"][0]).is_file()
+
+          async def verify():
+              async with Client(StdioServerParameters(
+                  command=config["command"],
+                  args=config["args"],
+                  env=config["env"],
+              )) as client:
+                  tools = await client.list_tools()
+                  names = {tool.name for tool in tools.tools}
+                  assert len(names) == 14, names
+                  assert "verify_submission_package" in names
+          asyncio.run(verify())
+          print("Fresh isolated install, config, and MCP connection OK")
+          PY
       - name: Verify Agent Skill frontmatter
         working-directory: .agents/skills/jechulok-submission
         shell: bash
