@@ -243,7 +243,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="JeChulOK local-only MCP setup. Never changes client settings."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("install", "doctor", "config", "probe"):
+    for command in ("install", "doctor", "config", "probe", "status"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--allowed-dir", required=True,
                          help="Existing canonical local directory containing your submission files")
@@ -271,6 +271,27 @@ def main(argv: list[str] | None = None) -> int:
             result = probe_connection(root, venv_python())
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0 if result["status"] == "pass" else 1
+        if args.command == "status":
+            doctor = environment_report(root, venv_python())
+            connection = (
+                probe_connection(root, venv_python())
+                if doctor["status"] == "pass"
+                else {
+                    "status": "skipped",
+                    "code": "doctor_first",
+                    "fix": "Resolve the failing doctor checks before attempting a connection.",
+                }
+            )
+            passed = doctor["status"] == "pass" and connection["status"] == "pass"
+            result = {
+                "status": "pass" if passed else "needs_attention",
+                "doctor": doctor, "connection": connection,
+                "client_config_modified": False,
+                "files_processed": 0,
+                "limitations": "Local health check only; not proof of host client registration or real submission.",
+            }
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0 if passed else 1
         return 2
     except (ValueError, OSError, RuntimeError) as exc:
         print("JeChulOK setup: " + str(exc), file=sys.stderr)
