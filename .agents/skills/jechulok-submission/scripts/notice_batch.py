@@ -14,6 +14,10 @@ from typing import Any, Callable
 import jechulok as core
 from submission_rules import parse_requirements
 
+class JobCancelled(Exception):
+    """Cooperative cancellation at safe file-operation boundaries."""
+
+
 MAX_NOTICE_LENGTH = 20_000
 MAX_ITEMS = 12
 _KIND = (
@@ -101,6 +105,8 @@ def _prepare_batch_internal(
     execute: bool = False,
     confirm_execution: bool = False,
     confine: Callable[..., Path],
+    on_progress: Callable[[dict[str, Any]], None] | None = None,
+    should_cancel: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     notice = analyze_notice(notice_text)
     if notice["status"] != "parsed":
@@ -212,8 +218,23 @@ def _prepare_batch_internal(
 
     created: list[Path] = []
     outcomes: list[dict[str, Any]] = []
+    def checkpoint() -> None:
+        if should_cancel is not None and should_cancel():
+            raise JobCancelled("작업 취소가 요청되었습니다.")
+
+    def emit(kind: str, item_id: str | None = None) -> None:
+        if on_progress is not None:
+            on_progress({
+                "event": kind, "item_id": item_id,
+                "completed_items": len(outcomes), "total_items": len(plans),
+            })
+
     try:
+        checkpoint()
+        emit("started")
         for plan in plans:
+            checkpoint()
+            emit("item_started", plan["item_id"])
             item_started = time.perf_counter()
             # An authorized path may have been replaced by a symlink or an
             # existing file after preflight. Reauthorize immediately before
@@ -230,6 +251,8 @@ def _prepare_batch_internal(
                                  "action": "verify_existing", "output": None,
                                  "duration_ms": round((time.perf_counter() - item_started) * 1000, 2),
                                  "verification": report})
+                emit("item_completed", plan["item_id"])
+                checkpoint()
                 continue
             if out is None:
                 raise ValueError("출력 경로가 없습니다.")
@@ -253,6 +276,18 @@ def _prepare_batch_internal(
                              "action": plan["action"], "output": str(out),
                              "duration_ms": round((time.perf_counter() - item_started) * 1000, 2),
                              "verification": verification, "preparation": operation})
+            emit("item_completed", plan["item_id"])
+            checkpoint()
+        checkpoint()
+    except JobCancelled:
+        for path in reversed(created):
+            path.unlink(missing_ok=True)
+        return {
+            "status": "cancelled", "dry_run": False,
+            "message": "취소 요청을 처리하고 이번 일괄 작업의 새 출력 파일을 정리했습니다.",
+            "rolled_back": [str(x) for x in created], "results": [], "plan": plans,
+            "institutional_submission_confirmed": False,
+        }
     except Exception as exc:
         for path in reversed(created):
             path.unlink(missing_ok=True)
@@ -281,7 +316,7 @@ def _attach_batch_summary(notice_text: str, result: dict[str, Any]) -> dict[str,
         plan = plans_by_id.get(item_id, {})
         if status == "pass" and finished and finished["status"] == "pass":
             technical_status = "verified"
-        elif status == "error" and any(
+        elif status in {"error", "cancelled"} and any(
             p["item_id"] == item_id and p.get("output_path") in rolled_back
             for p in result.get("plan", [])
         ):
@@ -324,13 +359,14 @@ def _attach_batch_summary(notice_text: str, result: dict[str, Any]) -> dict[str,
         "live_streaming": False,
         "phase": ("completed" if status == "pass" else
                   "awaiting_approval" if status in {"planned", "needs_confirmation"} else
-                  "blocked" if status == "needs_review" else "failed"),
+                  "blocked" if status == "needs_review" else
+                  "cancelled" if status == "cancelled" else "failed"),
         "completed_items": completed,
         "total_items": len(items),
         "percent": round(100 * completed / len(items)) if items else 0,
         "note": "완료 시점의 상태입니다. MCP 진행률을 실시간으로 스트리밍하지 않습니다.",
     }
-    if status in {"error", "needs_review"}:
+    if status in {"error", "needs_review", "cancelled"}:
         result["retry_guidance"] = {
             "automatic_retry": False,
             "reuse_prior_approval": False,
@@ -348,12 +384,15 @@ def prepare_batch(
     execute: bool = False,
     confirm_execution: bool = False,
     confine: Callable[..., Path],
+    on_progress: Callable[[dict[str, Any]], None] | None = None,
+    should_cancel: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
-    """v0.4 compatible API plus a truthful v0.6 technical progress summary."""
+    """Backward-compatible batch API with optional v1.3 cancellation checkpoints."""
     started = time.perf_counter()
     result = _prepare_batch_internal(
         notice_text, assignments, execute=execute,
         confirm_execution=confirm_execution, confine=confine,
+        on_progress=on_progress, should_cancel=should_cancel,
     )
     report = _attach_batch_summary(notice_text, result)
     report["duration_ms"] = round((time.perf_counter() - started) * 1000, 2)
