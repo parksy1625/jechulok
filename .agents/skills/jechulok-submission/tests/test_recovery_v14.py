@@ -279,7 +279,7 @@ class RecoveryMCPTests(unittest.IsolatedAsyncioTestCase):
             )
             async with Client(args) as client:
                 names = {x.name for x in (await client.list_tools()).tools}
-                self.assertEqual(len(names), 19)
+                self.assertEqual(len(names), 20)
                 self.assertIn("list_interrupted_submission_jobs", names)
                 self.assertIn("resolve_interrupted_submission_job", names)
                 response = await client.call_tool("list_interrupted_submission_jobs", {})
