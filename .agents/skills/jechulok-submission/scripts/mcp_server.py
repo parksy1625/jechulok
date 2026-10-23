@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v0.7). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v0.8). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -346,6 +346,35 @@ def verify_submission_package(
 ) -> dict[str, Any]:
     """Re-open *final* locally selected files, independently verify explicit technical rules, and return a human-only submission checklist. NEVER submits files."""
     return _result(lambda: verify_package(notice_text, files, confine=_confined))
+
+
+from guided_experience import guide_next_step, create_report
+
+@mcp.tool()
+def guide_submission_workflow(
+    notice_text: str,
+    assignments: list[dict[str, Any]] | None = None,
+    final_files: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """READ ONLY: return one concise next question for user, prioritizing unresolved criteria, missing source files, plan approval or final verification. NEVER auto-approve or execute."""
+    return _result(lambda: guide_next_step(
+        notice_text, assignments, final_files, confine=_confined,
+    ))
+
+
+@mcp.tool()
+def create_submission_html_report(
+    notice_text: str,
+    files: list[dict[str, Any]],
+    output_path: str,
+    execute: bool = False,
+    confirm_execution: bool = False,
+) -> dict[str, Any]:
+    """Local offline HTML technical report: preview by default. Creates a new .html only with execute=true and confirm_execution=true; never overwrites or submits anything."""
+    return _result(lambda: create_report(
+        notice_text, files, output_path, execute=execute,
+        confirm_execution=confirm_execution, confine=_confined,
+    ))
 
 
 if __name__ == "__main__":
