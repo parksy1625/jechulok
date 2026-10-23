@@ -1,4 +1,4 @@
-# 제출OK MCP v1.7 — local stdio server
+# 제출OK MCP v1.8 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -724,3 +724,38 @@ No new write paths, permission relaxations, automatic approval,
 institutional submissions or background synchronization were added.
 Explicit approvals, locked final preview verification, safe local
 processing and manual last-step acceptance remain required.
+
+
+## v1.8 — 100-case synthetic guidance quality evaluation
+
+No new MCP tools or authorization paths are introduced; the existing **20
+tools** are retained. Quality is now measured using a version-controlled
+synthetic evaluation and fixed expected outcomes.
+
+From the skill directory:
+
+    python scripts/evaluate_v18.py --check
+
+The evaluator outputs machine-readable JSON, runs 100 **distinct synthetic
+notice strings**, and returns a nonzero code on a failed/incomplete suite.
+It checks four independent 25-case groups:
+
+1. Exact technical rule extraction against predeclared format, bytes,
+   pixel dimensions and page-limit oracles.
+2. Fail-closed parsing of global, duplicated, ambiguous, unsupported and
+   internally conflicting rules.
+3. Read-only opt-in filename hints, bounded candidate lists and explicit
+   user-selection requirements; deliberately fake filename matches are
+   *never* treated as verified content.
+4. Refusal of risky calls without required approvals, matching preview
+   fingerprints or explicit crop permission, with zero generated outputs.
+
+GitHub Actions runs the suite on all 6 OS/Python combinations as unit tests,
+and uploads an independently executed JSON report from Ubuntu/Python 3.11
+as the jechulok-eval-v18-synthetic artifact for inspection.
+
+The report explicitly sets real_world_accuracy, candidate_semantic_accuracy
+and real_user_satisfaction to null. This test cannot estimate them, and
+the grouped-question count is not an empirical user-session measurement.
+Do not overstate the 100 synthetic outcomes as a percentage of real
+institutions that will accept uploads. See EVALUATION.md.
