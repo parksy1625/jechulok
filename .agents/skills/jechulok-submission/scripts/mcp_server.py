@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v0.3). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v0.5). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -80,6 +80,23 @@ def _confined(path_string: str, *, for_output: bool = False) -> Path:
     else:
         if not resolved.is_file():
             raise ValueError("Input must be an existing regular file")
+    return resolved
+
+
+
+def _confined_directory(path_string: str) -> Path:
+    """Authorize a real directory, disallowing symlinks and traversal aliases."""
+    if not isinstance(path_string, str) or not path_string.strip():
+        raise ValueError("A nonempty local directory path is required")
+    candidate = Path(path_string).expanduser().absolute()
+    resolved = candidate.resolve(strict=False)
+    # Reject symlinks and noncanonical /.. aliases before scanning any names.
+    if candidate != resolved:
+        raise ValueError("Directory aliases, traversal and symbolic links are not allowed")
+    if not any(resolved == root or root in resolved.parents for root in _roots()):
+        raise ValueError("Directory is outside JECHULOK_ALLOWED_DIRS")
+    if not resolved.is_dir():
+        raise ValueError("Directory does not exist or is not a directory")
     return resolved
 
 
@@ -280,6 +297,18 @@ def prepare_submission_batch(
     """Preflight all explicit item_id/file mappings. Dry run by default; actual writes need execute=true and confirm_execution=true. Never guess page ranges or overwrite files."""
     return _result(lambda: prepare_batch(notice_text, assignments, execute=execute,
                                          confirm_execution=confirm_execution, confine=_confined))
+
+
+from file_candidates import suggest_files
+
+@mcp.tool()
+def suggest_submission_files(
+    notice_text: str,
+    directory_path: str,
+) -> dict[str, Any]:
+    """Suggest local filename/extension candidates for named submission items. READ ONLY, no automatic assignment; inspect and confirm each mapping manually."""
+    return _result(lambda: suggest_files(notice_text, directory_path,
+                                         confine_directory=_confined_directory))
 
 
 if __name__ == "__main__":
