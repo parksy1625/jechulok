@@ -174,6 +174,19 @@ class LocalJobManager:
                         }
                     # The OS lock is held across this scan AND all writes.
                     self._refresh_recovered()
+                    if expected_plan_fingerprint is not None:
+                        # A prior dry-run cannot authorize a changed plan.
+                        # Check AGAIN under the OS lock, after any competing
+                        # writer has finished, before creating a job record.
+                        fresh = prepare_batch(notice_text, assignments, confine=confine)
+                        if (fresh["status"] != "planned"
+                                or plan_fingerprint(fresh["plan"]) != expected_plan_fingerprint):
+                            return {
+                                "status": "plan_changed", "job_started": False,
+                                "message": "승인 이후 계획 또는 입력 상태가 바뀌었습니다. 다시 미리보기 하세요.",
+                                "reusable_approval": False,
+                            }
+                        preview = fresh
                 if self._has_unresolved_recovery():
                     return {
                         "status": "recovery_required",
