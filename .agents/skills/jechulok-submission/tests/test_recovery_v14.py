@@ -167,6 +167,28 @@ class DurableRecoveryV14Tests(unittest.TestCase):
         self.assertFalse(self.ready_pdf.exists())
         self.assertTrue(stage.exists())
 
+    def test_crash_during_publication_keeps_final_file(self):
+        job_id, stage = self._seed_interrupted()
+        os.link(stage, self.ready)  # Simulate one successfully published hard link.
+        journal = job_journal.JobJournal(self.state)
+        old = journal.read(job_id)
+        old["status"] = "publishing"
+        journal.write(old)
+        before = self.ready.read_bytes()
+        restarted = background_jobs.LocalJobManager(journal_root=self.state)
+        inspected = restarted.review_recovery()["interrupted_jobs"][0]
+        self.assertEqual(inspected["previous_status"], "publishing")
+        self.assertTrue(inspected["output_files"][0]["exists"])
+        self.assertTrue(stage.exists())
+        result = restarted.resolve_recovery(
+            job_id, cleanup_staging=True, confirm_cleanup=True,
+            checked_final_outputs=True, confine=server._confined,
+        )
+        self.assertEqual(result["status"], "reviewed", result)
+        self.assertFalse(stage.exists())
+        self.assertEqual(self.ready.read_bytes(), before)
+        self.assertFalse(result["final_outputs_will_be_deleted"])
+
     def test_alive_owner_refuses_deletion(self):
         job_id, stage = self._seed_interrupted(pid=os.getpid())
         recovered = background_jobs.LocalJobManager(journal_root=self.state)
