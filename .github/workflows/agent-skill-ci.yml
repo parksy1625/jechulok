@@ -59,6 +59,8 @@ jobs:
         run: |
           python scripts/setup_mcp.py install --allowed-dir "$PWD"
           python scripts/setup_mcp.py doctor --allowed-dir "$PWD"
+          python scripts/setup_mcp.py probe --allowed-dir "$PWD"
+          python scripts/setup_mcp.py status --allowed-dir "$PWD"
           python scripts/setup_mcp.py config --client codex --allowed-dir "$PWD" > "$RUNNER_TEMP/jechulok-codex.toml"
           python - <<'PY'
           import asyncio
