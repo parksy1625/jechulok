@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import time
 from pathlib import Path
 from typing import Any, Callable
 
@@ -213,6 +214,7 @@ def _prepare_batch_internal(
     outcomes: list[dict[str, Any]] = []
     try:
         for plan in plans:
+            item_started = time.perf_counter()
             # An authorized path may have been replaced by a symlink or an
             # existing file after preflight. Reauthorize immediately before
             # each operation and fail the entire batch without overwrites.
@@ -225,7 +227,9 @@ def _prepare_batch_internal(
                 if report["status"] != "pass":
                     raise ValueError("PDF 재검사 실패: " + plan["item_id"])
                 outcomes.append({"item_id": plan["item_id"], "status": "pass",
-                                 "action": "verify_existing", "output": None, "verification": report})
+                                 "action": "verify_existing", "output": None,
+                                 "duration_ms": round((time.perf_counter() - item_started) * 1000, 2),
+                                 "verification": report})
                 continue
             if out is None:
                 raise ValueError("출력 경로가 없습니다.")
@@ -247,6 +251,7 @@ def _prepare_batch_internal(
                 raise ValueError("최종 파일 재검증에 실패했습니다: " + plan["item_id"])
             outcomes.append({"item_id": plan["item_id"], "status": "pass",
                              "action": plan["action"], "output": str(out),
+                             "duration_ms": round((time.perf_counter() - item_started) * 1000, 2),
                              "verification": verification, "preparation": operation})
     except Exception as exc:
         for path in reversed(created):
@@ -313,6 +318,26 @@ def _attach_batch_summary(notice_text: str, result: dict[str, Any]) -> dict[str,
         "institutional_submission_confirmed": False,
         "items": statuses,
     }
+    completed = len(verified) if status == "pass" else 0
+    result["progress"] = {
+        "type": "snapshot",
+        "live_streaming": False,
+        "phase": ("completed" if status == "pass" else
+                  "awaiting_approval" if status in {"planned", "needs_confirmation"} else
+                  "blocked" if status == "needs_review" else "failed"),
+        "completed_items": completed,
+        "total_items": len(items),
+        "percent": round(100 * completed / len(items)) if items else 0,
+        "note": "완료 시점의 상태입니다. MCP 진행률을 실시간으로 스트리밍하지 않습니다.",
+    }
+    if status in {"error", "needs_review"}:
+        result["retry_guidance"] = {
+            "automatic_retry": False,
+            "reuse_prior_approval": False,
+            "action": ("이전 실행의 출력을 확인하고 실패 원인을 수정한 후, "
+                       "전체 계획을 다시 미리보기로 검증하세요. "
+                       "새 출력 경로로 사용자 승인을 다시 받아야 합니다."),
+        }
     return result
 
 
@@ -325,8 +350,11 @@ def prepare_batch(
     confine: Callable[..., Path],
 ) -> dict[str, Any]:
     """v0.4 compatible API plus a truthful v0.6 technical progress summary."""
+    started = time.perf_counter()
     result = _prepare_batch_internal(
         notice_text, assignments, execute=execute,
         confirm_execution=confirm_execution, confine=confine,
     )
-    return _attach_batch_summary(notice_text, result)
+    report = _attach_batch_summary(notice_text, result)
+    report["duration_ms"] = round((time.perf_counter() - started) * 1000, 2)
+    return report
