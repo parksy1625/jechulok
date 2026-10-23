@@ -1,0 +1,43 @@
+name: JeChulOK Agent Skill CI
+on:
+  push:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/agent-skill-ci.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/agent-skill-ci.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        working-directory: .agents/skills/jechulok-submission
+        run: python -m pip install -r requirements.txt
+      - name: Run CLI tests
+        working-directory: .agents/skills/jechulok-submission
+        run: python -m unittest discover -s tests -v
+      - name: Verify Agent Skill frontmatter
+        working-directory: .agents/skills/jechulok-submission
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('SKILL.md').read_text()
+          assert text.startswith('---\n')
+          front = text.split('---',2)[1]
+          assert 'name: jechulok-submission' in front
+          assert 'description:' in front
+          print('Skill frontmatter OK')
+          PY
