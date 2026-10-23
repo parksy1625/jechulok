@@ -28,7 +28,7 @@ MAX_UNCOMPRESSED_SIZE = 32 * 1024 * 1024
 FIXED_TIME = (2026, 1, 1, 0, 0, 0)
 ROOT_FILES = (
     "VERSION", "SKILL.md", "MCP.md", "QUICKSTART.md",
-    "EVALUATION.md", "REAL_EVALUATION.md", "LICENSE",
+    "EVALUATION.md", "REAL_EVALUATION.md", "RELEASE_NOTES_v2.md", "LICENSE",
     "requirements.txt", "requirements-mcp.txt",
 )
 
