@@ -5,12 +5,38 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "0.8.0"
+  version: "0.9.0"
 ---
 
 # JeChulOK Submission Agent Skill
 
 Use the bundled Python CLI to prepare **local** submission files. Read the user's file paths and institution's exact requirements before executing. The tool never uploads files and never replaces an existing file.
+
+## v0.9: Guided local installation
+
+For first-time installation, prefer the standard-library setup helper (Python
+3.11+) rather than installing packages into the system Python:
+
+```bash
+python3 scripts/setup_mcp.py install --allowed-dir "/absolute/path/to/submission-files"
+python3 scripts/setup_mcp.py doctor --allowed-dir "/absolute/path/to/submission-files"
+python3 scripts/setup_mcp.py config --client codex --allowed-dir "/absolute/path/to/submission-files"
+```
+
+Use an existing, real, canonical directory. The installer creates a private
+`.venv` in the skill folder and installs pinned-range dependencies there. It
+does **not** modify the Codex, Cursor, or Claude Desktop MCP configuration.
+The `config` command prints an escaped snippet to copy into the appropriate
+client settings; choose `--client cursor` or `--client claude-desktop` for
+JSON. Never automatically copy/edit another application's existing config,
+expose all of the user's home directory or launch the server as a remote
+network endpoint. `doctor` performs read-only local environment checks and
+reports specific remediation items. A successful doctor cannot guarantee that
+a particular AI client has connected to the MCP server.
+
+For installation walkthrough and troubleshooting see `QUICKSTART.md`.
+The installer may access the internet only when an individual user
+explicitly runs the `install` command to obtain Python dependencies.
 
 ## Setup
 
