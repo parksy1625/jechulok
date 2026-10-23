@@ -2,9 +2,30 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v1.8.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v1.9.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v1.9: 실제 공고로 평가할 수 있는 독립 검수 체계
+
+v1.8의 합성 평가를 실제로 확장할 수 있도록 **로컬 실측 평가 엔진**을 추가했습니다.
+사용 권한을 확보하고 개인정보를 제거한 공고를 별도로 준비한 다음,
+**서로 다른 2명의 검수자가 독립적으로 작성한 정답 라벨**을 비교합니다.
+의견이 다르면 제3자의 판정이 필요하고, 판정 전 사례는 정확도에서 제외합니다.
+
+- **조건 누락률·잘못된 규격률:** 파일 유형·용량·픽셀·페이지 조건을 항목별로 비교
+- **모호한 공고 차단률:** 사용자 확인이 필요한 사례를 안전하게 막았는지 평가
+- **과도한 차단률:** 정상 공고를 불필요하게 거부했는지 평가
+- **검수 일치율:** 두 사람의 독립적인 정답 라벨이 얼마나 일치했는지 확인
+
+평가 실행 방법: 스킬 폴더에서 `python scripts/evaluate_real_v19.py private-evaluation/notices.notice-eval-private.jsonl --strict`.
+입력 자료는 **로컬에만 보관**하고, 결과도 원문이나 식별자를 출력하지 않는 집계 JSON입니다.
+권한·비식별화 점검이 없거나 대표적인 개인정보 패턴이 보이면 평가를 거부합니다.
+
+**아직 실제 공고 데이터는 제공되거나 평가되지 않았으므로, 실제 정확도 수치는 없습니다.**
+공개 GitHub CI는 합성 예제만 이용합니다.
+사용법 및 데이터 스키마는 **[REAL_EVALUATION.md](.agents/skills/jechulok-submission/REAL_EVALUATION.md)**에서 확인할 수 있습니다.
+기존 **20개 로컬 MCP 도구**와 웹사이트는 변경하지 않았습니다.
 
 ### v1.8: 합성 공고 100건 품질·안전성 자동 평가
 
@@ -237,7 +258,7 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v1.8 — AI가 직접 호출하는 로컬 도구
+## MCP v1.9 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`, `assist_submission` 등의 20개 도구를
@@ -249,7 +270,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v1.8 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v1.9 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
