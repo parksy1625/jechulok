@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v1.0). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v1.3). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -380,6 +380,34 @@ def create_submission_html_report(
         notice_text, files, output_path, execute=execute,
         confirm_execution=confirm_execution, confine=_confined,
     ))
+
+
+from background_jobs import manager as local_jobs
+
+@mcp.tool()
+def start_submission_job(
+    notice_text: str,
+    assignments: list[dict[str, Any]],
+    execute: bool = False,
+    confirm_execution: bool = False,
+) -> dict[str, Any]:
+    """Create a cancellable local batch job only after explicit consent to the exact plan. Dry-run by default. Returns a job_id to poll; never uploads."""
+    return _result(lambda: local_jobs.start(
+        notice_text, assignments, execute=execute,
+        confirm_execution=confirm_execution, confine=_confined,
+    ))
+
+
+@mcp.tool()
+def get_submission_job(job_id: str) -> dict[str, Any]:
+    """Poll per-item progress in this live local MCP process; never read or modify user files. This is NOT a server-pushed progress stream."""
+    return _result(lambda: local_jobs.get(job_id))
+
+
+@mcp.tool()
+def cancel_submission_job(job_id: str) -> dict[str, Any]:
+    """Request cooperative cancellation of a local job; active operation finishes before rollback, then final status is cancelled. Does NOT immediately stop an encoder."""
+    return _result(lambda: local_jobs.cancel(job_id))
 
 
 if __name__ == "__main__":
