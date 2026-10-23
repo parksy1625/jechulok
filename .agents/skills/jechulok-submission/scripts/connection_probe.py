@@ -24,6 +24,7 @@ EXPECTED_TOOLS = frozenset({
     "review_submission_plan", "verify_submission_package",
     "guide_submission_workflow", "create_submission_html_report",
     "start_submission_job", "get_submission_job", "cancel_submission_job",
+    "list_interrupted_submission_jobs", "resolve_interrupted_submission_job",
 })
 PROBE_RULE = "JPG 300×400px 500KB 이하"
 
