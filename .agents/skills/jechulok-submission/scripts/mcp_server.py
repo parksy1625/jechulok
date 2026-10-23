@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v0.8). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v1.0). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -56,6 +56,11 @@ def _confined(path_string: str, *, for_output: bool = False) -> Path:
     # Deny symbolic links anywhere between an allowed root and the target.
     # Resolving first disallows aliases that point outside a permitted root.
     resolved = candidate.resolve(strict=False)
+    # Check the lexical path, not only its resolved target: a symlinked
+    # intermediate directory can otherwise bypass the previous check.
+    # This also rejects /.. traversal aliases, even if they stay in-bounds.
+    if candidate != resolved:
+        raise ValueError("Path aliases, traversal and symbolic links are not allowed")
     roots = _roots()
     matched = None
     for root in roots:
