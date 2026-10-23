@@ -69,7 +69,7 @@ class ReleaseV10Tests(unittest.IsolatedAsyncioTestCase):
         """One real child process, discovery -> approvals -> prepare -> receipt-free verification."""
         async with Client(self._mcp()) as client:
             names = {tool.name for tool in (await client.list_tools()).tools}
-            self.assertEqual(len(names), 17)
+            self.assertEqual(len(names), 19)
             notice = await client.call_tool("analyze_submission_notice", {
                 "notice_text": NOTICE
             })
