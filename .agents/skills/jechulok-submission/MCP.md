@@ -1,4 +1,4 @@
-# 제출OK MCP v0.7 — local stdio server
+# 제출OK MCP v0.8 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -45,6 +45,8 @@ Important: The default allowed directory is the MCP process's working directory,
 | `suggest_submission_output_paths` | Suggest collision-free output filenames for explicitly reviewed mappings | No |
 | `review_submission_plan` | Re-check a dry run, show approvals and reason-specific repair steps | No |
 | `verify_submission_package` | Re-open final files and validate technical constraints with pending human checklist | No |
+| `guide_submission_workflow` | Return one prioritized, concise next user question without automatic approval | No |
+| `create_submission_html_report` | Preview or explicitly save a standalone offline HTML technical report | Only with separate dual approval |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -274,3 +276,68 @@ content is correct, or whether an institution accepted any upload.
 
 No photos or PDFs are uploaded, modified, submitted or stored by these two
 tools. Only authorized local files are read.
+
+
+## v0.8 — One-question guided flow and offline HTML report
+
+MCP now has **14 tools**. Use `guide_submission_workflow` to guide the
+conversation through one decision at a time (it does not execute anything):
+
+```json
+{
+  "notice_text": "- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지",
+  "assignments": []
+}
+```
+
+The tool prioritizes:
+1. Ambiguous/unassigned notice requirements (`clarify_notice`)
+2. First unmapped required file (`choose_source`)
+3. Technical problems with confirmed mappings (`fix_plan`)
+4. Approval of the exact, fully specified dry-run plan (`approve_exact_plan`)
+5. After final files exist, their current technical errors (`fix_final_files`)
+6. Remaining manual content/acceptance checks (`check_original_content`)
+
+The tool returns `question`, `next_action` and a short status; it never
+records human consent. The agent must get **separate, real approval** for any
+file-changing execution. `final_files` is optional and switches the workflow
+to re-checking the actual final files. Do not infer that previously verified
+files are still unchanged.
+
+For a local printable technical report, call
+`create_submission_html_report(notice_text, files, output_path)` with the
+original notice and the confirmed **final** item-to-file paths:
+
+```json
+{
+  "notice_text": "- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지",
+  "files": [
+    {"item_id":"item_01","file_path":"/workspace/ready.jpg"},
+    {"item_id":"item_02","file_path":"/workspace/ready.pdf"}
+  ],
+  "output_path": "/workspace/submission-check.html",
+  "execute": false,
+  "confirm_execution": false
+}
+```
+
+- Default is `status=preview`: checks files again and returns a summary,
+  **but writes nothing**. `execute=true` alone returns
+  `needs_confirmation` and still writes nothing.
+- Saving requires BOTH `execute=true` and `confirm_execution=true`,
+  plus actual human authorization of the exact output path.
+- Only a **new** `.html` path beneath `JECHULOK_ALLOWED_DIRS` is allowed;
+  an existing file cannot be overwritten.
+- Static UTF-8 HTML only; content security policy prevents scripts and external
+  assets, and displayed text is HTML-escaped. The report includes item labels,
+  final **basenames**, observed file bytes, technical status, and unchecked
+  manual-review items. It does not embed file contents, full absolute paths,
+  photos, PDF pages, or any external URLs.
+- A report may still be created if technical verification fails, but is
+  prominently labeled as such. A successful technical inspection is never
+  equivalent to having submitted documents or having them accepted.
+- Reports contain potentially identifying filenames. Keep generated HTML
+  within authorized private local folders; never upload it automatically.
+
+The HTML is a **snapshot**, not a live monitor. Re-run technical verification
+after any modification of the final files. Neither new tool uploads or submits.
