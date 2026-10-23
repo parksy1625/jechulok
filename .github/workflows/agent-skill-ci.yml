@@ -38,6 +38,26 @@ jobs:
       - name: Run CLI + MCP + end-to-end release tests
         working-directory: .agents/skills/jechulok-submission
         run: python -m unittest discover -s tests -v
+      - name: Offline synthetic image benchmark smoke check (Linux 3.11)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        working-directory: .agents/skills/jechulok-submission
+        shell: bash
+        run: |
+          python scripts/benchmark_v12.py > "$RUNNER_TEMP/jechulok-v12-bench.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "jechulok-v12-bench.json"
+          data = json.loads(p.read_text(encoding="utf-8"))
+          assert data["status"] == "pass"
+          assert data["files_retained"] is False
+          assert data["personal_documents_processed"] is False
+          cases = {x["case"]: x for x in data["cases"]}
+          assert cases["generous_limit"]["encoding_attempts"] == 1
+          assert cases["tight_limit"]["encoding_attempts"] > 1
+          assert all(x["technical_status"] == "pass" for x in cases.values())
+          print("Synthetic benchmark smoke OK")
+          PY
       - name: Read-only setup doctor smoke check
         working-directory: .agents/skills/jechulok-submission
         shell: bash
