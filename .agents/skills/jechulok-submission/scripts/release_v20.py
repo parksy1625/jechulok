@@ -129,7 +129,7 @@ def build(destination: Path) -> dict:
         if created_checksum:
             sidecar.unlink(missing_ok=True)
         raise
-    return {"status": "built", **checked, "archive": str(target), "checksum_file": str(sidecar),
+    return {**checked, "status": "built", "archive": str(target), "checksum_file": str(sidecar),
             "client_settings_changed": False, "user_files_read": False}
 
 
@@ -194,7 +194,7 @@ def extract(archive_path: Path, destination: Path, *, execute: bool = False) -> 
     checked = verify(archive_path)
     target = _canonical_target(destination)
     if not execute:
-        return {"status": "planned", "destination": str(target), **checked,
+        return {**checked, "status": "planned", "destination": str(target),
                 "files_created": 0, "confirmation_required": True}
     # Never extract into the original skill root itself or modify an
     # existing working directory. Rollback the staging folder on errors.
