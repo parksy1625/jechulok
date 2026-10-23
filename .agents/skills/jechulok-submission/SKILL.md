@@ -5,10 +5,41 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "1.6.0"
+  version: "1.7.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v1.7 — Concise and grounded human-facing guidance
+
+The MCP tool count remains **20**. `assist_submission` now optionally
+accepts `source_directory` for read-only file hints, but **never scans a
+directory automatically**. Only when the caller explicitly provides an
+authorized directory AND some submission items lack inputs does it inspect
+up to 250 immediate directory entries using the existing
+`suggest_files` helper. It returns at most 3 filename/extension-only
+candidate hints per missing item. The user must personally select each
+input; do not label hints as correct, inspect their contents, or auto-map.
+
+When multiple items still lack input paths, present **one human prompt**
+covering all missing items. The result includes `file_selection.items`
+with `item_id`, expected format, optional hints, and
+`requires_explicit_user_selection=true`. No input selection is saved.
+
+For ambiguous notices, show `notice_explanation.issues` with a bounded
+source-line number, short original evidence, static issue code, explanation,
+and specific next human action. This is not an AI-generated correction:
+ambiguous global rules and duplicate document types continue to block
+execution. For invalid plans show `problem_explanation`, which translates
+real preflight blockers into static actionable guidance while preserving the
+original reason excerpt and the conservative read-only behavior.
+
+The older `guide_submission_workflow` tool and all action names,
+submission flags and plan fingerprint checks remain compatible.
+Neither clarification nor source-directory hints counts as human approval.
+No generated output or institutional upload is permitted before an
+unambiguous plan, separate consent and final locked preflight.
+
 
 ## v1.6 — Single guided entry point, no automatic consent
 
