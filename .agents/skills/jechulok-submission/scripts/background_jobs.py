@@ -17,6 +17,7 @@ import jechulok as core
 from job_journal import JobJournal, eligible_stage, pid_is_alive, stage_for_output
 from job_lock import FolderWriteLock
 from notice_batch import prepare_batch
+from submission_assistant import plan_fingerprint
 
 MAX_HISTORY = 16
 ACTIVE = frozenset({"queued", "running", "cancel_requested", "publishing"})
@@ -132,6 +133,7 @@ class LocalJobManager:
     def start(
         self, notice_text: str, assignments: list[dict[str, Any]],
         *, execute: bool, confirm_execution: bool, confine: Callable[..., Path],
+        expected_plan_fingerprint: str | None = None,
     ) -> dict[str, Any]:
         if type(execute) is not bool or type(confirm_execution) is not bool:
             raise ValueError("execute and confirm_execution must be booleans")
@@ -142,6 +144,14 @@ class LocalJobManager:
         preview = prepare_batch(notice_text, assignments, confine=confine)
         if preview["status"] != "planned":
             return preview
+        if expected_plan_fingerprint is not None:
+            if (not isinstance(expected_plan_fingerprint, str)
+                    or expected_plan_fingerprint != plan_fingerprint(preview["plan"])):
+                return {
+                    "status": "plan_changed", "job_started": False,
+                    "message": "미리보기의 작업 계획과 현재 계획이 다릅니다. 새로 승인받으세요.",
+                    "reusable_approval": False,
+                }
         if not execute or not confirm_execution:
             return {
                 "status": "needs_confirmation" if execute else "planned",
