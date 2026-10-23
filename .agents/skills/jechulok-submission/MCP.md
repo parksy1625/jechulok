@@ -1,4 +1,4 @@
-# 제출OK MCP v0.6 — local stdio server
+# 제출OK MCP v0.7 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -43,6 +43,8 @@ Important: The default allowed directory is the MCP process's working directory,
 | `prepare_submission_batch` | Preflight explicit item-to-file mappings and optionally process with double confirmation | Only with execution approval |
 | `suggest_submission_files` | Read-only hints based on local filenames and compatible extensions, never auto-assigns | No |
 | `suggest_submission_output_paths` | Suggest collision-free output filenames for explicitly reviewed mappings | No |
+| `review_submission_plan` | Re-check a dry run, show approvals and reason-specific repair steps | No |
+| `verify_submission_package` | Re-open final files and validate technical constraints with pending human checklist | No |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -210,3 +212,65 @@ The batch result now includes `summary` with:
 
 Statuses `planned`, `awaiting_confirmation`, `blocked`,
 `rolled_back`, and `not_executed` are not success. All files stay local.
+
+
+## v0.7 — Human review, remediation and final technical checklist
+
+**New read-only tools:** `review_submission_plan` and
+`verify_submission_package`. There are now 12 MCP tools total.
+
+### Before execution
+
+After confirming actual input/output paths with the user, call
+`review_submission_plan(notice_text, assignments)` using the same exact
+assignments that would be used for `prepare_submission_batch`. It returns
+a dry-run plan, unresolved issues, a machine-generated remediation guide,
+and five **unchecked manual approval items**:
+
+- Confirm each requirement against the original announcement
+- Confirm actual input/output paths and the correct document content
+- For PDFs, check user-selected pages and potential signature/form loss
+- If cropping photos, obtain explicit permission
+- Review the *exact* final dry-run plan and approve execution
+
+`status=awaiting_human_approval` means the technical preflight succeeded;
+**it is NOT approval** and does not authorize any file changes. Missing or
+ambiguous items return `needs_review` and human-action repair suggestions.
+Do not set `execute=true` or `confirm_execution=true` because of any
+status returned by a read-only tool. The user must explicitly authorize
+execution of the specific plan separately.
+
+The existing `prepare_submission_batch` result now also includes
+`remediation` and `approval_checklist`. The tool retains its original
+dry-run default, explicit double execution flags and rollback protections.
+
+### Just before submitting
+
+Use `verify_submission_package` with the original notice and **exact final
+file paths**, even if those files were previously marked `verified`:
+
+```json
+{
+  "notice_text": "- 증명사진: JPG 300×400px 500KB 이하\n- 이력서: PDF 5MB 이하, 최대 3페이지",
+  "files": [
+    {"item_id":"item_01","file_path":"/workspace/ready-photo.jpg"},
+    {"item_id":"item_02","file_path":"/workspace/ready-resume.pdf"}
+  ]
+}
+```
+
+Each final file is opened again, its real signature, extension, size,
+dimensions or page count evaluated against the notice, and mismatches mapped
+to non-executable repair guidance. Ambiguous notices, missing/duplicate item
+IDs, disallowed paths and unreadable files never receive a technical pass.
+
+**Critical:** `status=technical_pass` means *only the explicitly stated
+machine-checkable requirements* passed at inspection time. Even with all
+items passing, `ready_to_submit=false`,
+`institutional_submission_confirmed=false`, and every human checklist item
+remains `verified=false`. The tool does not know whether an image is a
+compliant portrait, whether PDFs retain signatures, whether the document
+content is correct, or whether an institution accepted any upload.
+
+No photos or PDFs are uploaded, modified, submitted or stored by these two
+tools. Only authorized local files are read.
