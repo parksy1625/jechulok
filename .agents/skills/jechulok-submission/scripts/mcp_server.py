@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK local MCP server (v1.6). Only stdio; never listens on a network port.
+"""JeChulOK local MCP server (v1.7). Only stdio; never listens on a network port.
 
 The file-processing logic is shared with the CLI in jechulok.py. Inputs and
 outputs are confined to JECHULOK_ALLOWED_DIRS (default: current working directory).
@@ -449,6 +449,7 @@ def assist_submission(
     approval_fingerprint: str | None = None,
     execute: bool = False,
     confirm_execution: bool = False,
+    source_directory: str | None = None,
 ) -> dict[str, Any]:
     """One guided entry point: ask the next human question, preview exact input/output plan, start only with explicit approval and matching plan fingerprint, poll/cancel local job or verify final files. Never uploads or infers consent."""
     return _result(lambda: guided_assist(
@@ -456,7 +457,9 @@ def assist_submission(
         assignments=assignments, final_files=final_files,
         job_id=job_id, approval_fingerprint=approval_fingerprint,
         execute=execute, confirm_execution=confirm_execution,
-        confine=_confined, jobs=local_jobs,
+        source_directory=source_directory,
+        confine=_confined, confine_directory=_confined_directory,
+        jobs=local_jobs,
     ))
 
 
