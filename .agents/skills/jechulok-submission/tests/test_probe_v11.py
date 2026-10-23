@@ -107,6 +107,39 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(exit_code, 1)
         self.assertEqual(json.loads(out.getvalue())["code"], "venv_missing")
 
+    def test_single_status_skips_probe_when_doctor_fails(self):
+        with (
+            patch.object(setup_mcp, "VENV_PATH", self.root / "nonexistent-venv"),
+            patch.object(setup_mcp, "probe_connection") as probed,
+            contextlib.redirect_stdout(io.StringIO()) as out,
+        ):
+            exit_code = setup_mcp.main(["status", "--allowed-dir", str(self.root)])
+        result = json.loads(out.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(result["status"], "needs_attention")
+        self.assertEqual(result["doctor"]["status"], "needs_setup")
+        self.assertEqual(result["connection"]["code"], "doctor_first")
+        probed.assert_not_called()
+
+    def test_single_status_uses_real_handshake_after_good_doctor(self):
+        with (
+            patch.object(setup_mcp, "VENV_PATH", self.root / "fake-venv"),
+            patch.object(setup_mcp, "environment_report", return_value={
+                "status": "pass", "checks": [],
+            }),
+            patch.object(setup_mcp, "probe_connection", return_value={
+                "status": "pass", "tool_count": 14,
+            }) as probed,
+            contextlib.redirect_stdout(io.StringIO()) as out,
+        ):
+            exit_code = setup_mcp.main(["status", "--allowed-dir", str(self.root)])
+        self.assertEqual(exit_code, 0)
+        data = json.loads(out.getvalue())
+        self.assertEqual(data["status"], "pass")
+        self.assertEqual(data["connection"]["tool_count"], 14)
+        self.assertFalse(data["client_config_modified"])
+        probed.assert_called_once()
+
     def test_cli_probe_does_not_modify_files(self):
         before = set(self.root.iterdir())
         with patch.object(setup_mcp, "VENV_PATH", self.root / "virtualenv"):
