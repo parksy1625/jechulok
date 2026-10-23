@@ -201,7 +201,7 @@ class BackgroundJobMCPTransportTests(unittest.IsolatedAsyncioTestCase):
             )
             async with Client(params) as client:
                 names = {tool.name for tool in (await client.list_tools()).tools}
-                self.assertEqual(len(names), 19)
+                self.assertEqual(len(names), 20)
                 self.assertTrue({"start_submission_job", "get_submission_job",
                                  "cancel_submission_job", "list_interrupted_submission_jobs", "resolve_interrupted_submission_job"} <= names)
                 started = await client.call_tool("start_submission_job", {
