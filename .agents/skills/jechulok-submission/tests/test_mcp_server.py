@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from PIL import Image
 from pypdf import PdfWriter
-from mcp import Client
+from mcp import Client, StdioServerParameters
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -43,6 +43,24 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
             names = {item.name for item in listing.tools}
             self.assertEqual(names, {"check_file", "prepare_image", "extract_pdf_pages", "verify_submission"})
             self.assertIsNotNone(next(x for x in listing.tools if x.name == "prepare_image").input_schema)
+
+    async def test_real_stdio_transport(self):
+        """Connect through the same child-process transport as an AI host."""
+        params = StdioServerParameters(
+            command=sys.executable,
+            args=[str(ROOT / "scripts" / "mcp_server.py")],
+            env={"JECHULOK_ALLOWED_DIRS": str(self.root)},
+        )
+        async with Client(params) as client:
+            tools = await client.list_tools()
+            self.assertEqual(len(tools.tools), 4)
+            response = await client.call_tool("check_file", {
+                "input_path": str(self.pdf),
+                "expected_format": "pdf",
+                "max_pages": 7,
+            })
+            self.assertFalse(response.is_error)
+            self.assertEqual(response.structured_content["status"], "pass")
 
     async def test_tool_check_and_verification(self):
         async with Client(server.mcp) as client:
