@@ -15,3 +15,8 @@
 .agents/skills/jechulok-submission/private-evaluation/
 **/*.notice-eval-private.jsonl
 **/*.notice-eval-private.json
+
+# v2.0 local release archives and interrupted extraction staging
+jechulok-agent-skill-v*.zip
+jechulok-agent-skill-v*.sha256
+.jechulok-release-*/
