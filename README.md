@@ -2,9 +2,30 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v1.9.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v2.0.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v2.0: 배포 ZIP · 무결성 검사 · 안전한 나란히 설치
+
+Python Agent Skill/MCP를 **실제로 내려받아 설치할 수 있는 ZIP 패키지**로
+묶는 배포 도구를 추가했습니다. 기존 **20개 MCP 도구와 승인 규칙**은 그대로입니다.
+
+- ZIP 내부에 소스 파일별 SHA-256 목록을 포함하고, 전체 ZIP의 SHA-256도 별도로 제공합니다.
+- GitHub Actions에서 **패키지 생성 → 해시 검증 → 압축 해제 → 실제 MCP 연결**을 테스트합니다.
+- 기존 설치는 덮어쓰지 않고 **새 폴더에 버전별로 설치**합니다.
+- `setup_mcp.py upgrade`는 기본적으로 읽기 전용 미리보기이며, `--execute`가 있어야 새 파일을 만듭니다.
+- 기존 가상환경 및 Codex·Cursor·Claude Desktop 설정은 변경하지 않습니다.
+- `v2.0.0` 태그를 **별도로 생성하면**, 전체 테스트를 통과한 뒤 ZIP과 체크섬을 GitHub Release에 등록하도록 배포 워크플로를 구성했습니다.
+
+**현재 GitHub Actions 아티팩트는 30일 보관하는 배포 후보 ZIP**입니다.
+태그 기반 공식 GitHub Release 게시 여부는 별개이며, 태그가 생성되기 전에는
+게시됐다고 볼 수 없습니다. 체크섬은 서명을 대신하지 않고, 외부 보안감사도
+수행했다고 주장하지 않습니다. 설치 시 필요한 외부 Python 패키지는
+초기 설치 중 인터넷이 필요할 수 있습니다.
+
+방법: **[v2.0 릴리스 노트](.agents/skills/jechulok-submission/RELEASE_NOTES_v2.md)** /
+**[빠른 시작](.agents/skills/jechulok-submission/QUICKSTART.md)**
 
 ### v1.9: 실제 공고로 평가할 수 있는 독립 검수 체계
 
@@ -258,7 +279,7 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v1.9 — AI가 직접 호출하는 로컬 도구
+## MCP v2.0 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`, `assist_submission` 등의 20개 도구를
@@ -270,7 +291,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v1.9 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v2.0 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
