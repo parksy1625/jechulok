@@ -10,6 +10,9 @@ on:
       - '.github/workflows/agent-skill-ci.yml'
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
