@@ -41,6 +41,31 @@ jobs:
       - name: Run CLI + MCP + end-to-end release tests
         working-directory: .agents/skills/jechulok-submission
         run: python -m unittest discover -s tests -v
+      - name: Evaluate 100 synthetic guidance scenarios (Linux 3.11)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        working-directory: .agents/skills/jechulok-submission
+        shell: bash
+        run: |
+          python scripts/evaluate_v18.py --check > "$RUNNER_TEMP/jechulok-eval-v18.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-eval-v18.json").read_text())
+          assert data["dataset_type"] == "synthetic_only"
+          assert data["evaluated_cases"] == 100
+          assert data["passed_cases"] == 100, data["failures"]
+          assert len(data["families"]) == 4
+          assert data["real_world_accuracy"] is None
+          print("100 synthetic cases passed; no real-world accuracy claims")
+          PY
+      - name: Upload inspectable v1.8 evaluation JSON
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-eval-v18-synthetic
+          path: ${{ runner.temp }}/jechulok-eval-v18.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Offline synthetic image benchmark smoke check (Linux 3.11)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         working-directory: .agents/skills/jechulok-submission
