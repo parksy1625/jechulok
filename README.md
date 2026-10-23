@@ -15,8 +15,10 @@ v0.9의 **14개 MCP 도구와 기존 CLI 사용법을 유지**하면서,
 다중 파일 실행 중에도 각 입력·출력 경로를 다시 확인하며,
 실패 시 생성된 결과를 정리합니다.
 
-GitHub Actions는 Python 3.11·3.13에서 **의존성 검사 → 컴파일 →
-전체 테스트 → 설치 환경 진단**을 실행합니다. 이 자동 검증은
+GitHub Actions는 **Ubuntu·macOS·Windows × Python 3.11·3.13**의 6개 조합에서
+**의존성 검사 → 컴파일 → 전체 테스트 → 설치 환경 진단**을 실행합니다.
+Ubuntu/Python 3.11에서는 별도 `.venv`를 새로 설치하고 실제 생성된
+Codex 설정으로 로컬 MCP 서버에 연결하는 설치 통합 테스트도 수행합니다. 이 자동 검증은
 실제 기관 접수나 외부 보안 감사가 아니며, 내용·서명·사진 구성은
 직접 확인해야 합니다. 자세한 운영 범위는 [SECURITY.md](SECURITY.md)에
 정리했습니다.
@@ -70,7 +72,7 @@ python scripts/jechulok.py prepare-pdf --input ./source.pdf --output ./selected.
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions가 Python 3.11·3.13 환경에서 테스트합니다. CLI 스킬 폴더는 MIT 라이선스이며, 이 라이선스가 저장소의 별도 웹서비스 소스나 다른 프로젝트에 자동으로 적용되지는 않습니다.
+GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합을 테스트합니다. CLI 스킬 폴더는 MIT 라이선스이며, 이 라이선스가 저장소의 별도 웹서비스 소스나 다른 프로젝트에 자동으로 적용되지는 않습니다.
 
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
