@@ -249,7 +249,7 @@ def _prepare_batch_internal(
         for path in reversed(created):
             path.unlink(missing_ok=True)
         return {"status": "error", "message": "일괄 처리 실패. 이번 작업에서 완성된 출력 파일은 정리했습니다.",
-                "reason": str(exc)[:300], "rolled_back": [str(x) for x in created], "results": []}
+                "reason": str(exc)[:300], "rolled_back": [str(x) for x in created], "results": [], "plan": plans}
     return {"status": "pass", "dry_run": False, "results": outcomes,
             "limitations": "명시된 형식·픽셀·용량·페이지 수만 검증합니다. 문서 내용과 실제 접수는 확인하지 못합니다."}
 
