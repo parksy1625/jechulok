@@ -11,6 +11,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -198,6 +199,7 @@ def persist_validated(data: bytes, output: Path, constraints: dict[str, Any], *,
 
 
 def prepare_image(path: Path, args: argparse.Namespace) -> dict[str, Any]:
+    started = time.perf_counter()
     metadata = info_for(path)
     if metadata["format"] not in {"jpg", "png", "webp"}:
         raise ValueError("Image conversion in v0.1 supports JPG, PNG and WebP sources")
@@ -224,28 +226,43 @@ def prepare_image(path: Path, args: argparse.Namespace) -> dict[str, Any]:
         best: bytes | None = None
         low, high = 8, 95
         threshold = args.max_kb * 1024 if args.max_kb is not None else None
+        attempts = 0
+
+        def encode(quality: int) -> bytes:
+            nonlocal attempts
+            attempts += 1
+            buffer.seek(0)
+            buffer.truncate(0)
+            background.save(buffer, format="JPEG", quality=quality, optimize=True, progressive=True)
+            return buffer.getvalue()
+
         if threshold is None:
-            background.save(buffer, format="JPEG", quality=92, optimize=True, progressive=True)
-            best = buffer.getvalue()
+            best = encode(92)
         else:
-            while low <= high:
-                mid = (low + high)//2
-                buffer.seek(0); buffer.truncate(0)
-                background.save(buffer, format="JPEG", quality=mid, optimize=True, progressive=True)
-                payload = buffer.getvalue()
-                if len(payload) <= threshold:
-                    best = payload
-                    low = mid + 1
-                else:
-                    high = mid - 1
-            if best is None:
-                raise ValueError("Cannot satisfy the requested size even at low JPEG quality; reduce the pixel dimensions")
+            # Fast path: most submission images already fit even at the
+            # highest supported quality. Skip up to seven JPEG re-encodes.
+            candidate = encode(95)
+            if len(candidate) <= threshold:
+                best = candidate
+            else:
+                high = 94
+                while low <= high:
+                    mid = (low + high) // 2
+                    payload = encode(mid)
+                    if len(payload) <= threshold:
+                        best = payload
+                        low = mid + 1
+                    else:
+                        high = mid - 1
+                if best is None:
+                    raise ValueError("Cannot satisfy the requested size even at low JPEG quality; reduce the pixel dimensions")
     rules = {"expected_format": "jpg", "max_kb": args.max_kb, "width": width, "height": height, "max_pages": None}
     report = persist_validated(best, dest, rules)
-    return {"status": "pass", "operation": "prepare-image", "input": str(path), "output": str(dest), "mode": args.mode, "report": report, "warning": "White padding preserves the image; cover mode crops the center. Transparency and metadata are removed. Face positioning is not checked."}
+    return {"status": "pass", "operation": "prepare-image", "input": str(path), "output": str(dest), "mode": args.mode, "report": report, "encoding_attempts": attempts, "duration_ms": round((time.perf_counter() - started) * 1000, 2), "warning": "White padding preserves the image; cover mode crops the center. Transparency and metadata are removed. Face positioning is not checked."}
 
 
 def prepare_pdf(path: Path, args: argparse.Namespace) -> dict[str, Any]:
+    started = time.perf_counter()
     meta = info_for(path)
     if meta["format"] != "pdf" or meta["pages"] is None:
         raise ValueError("PDF is encrypted, damaged, too large or has unreadable pages; cannot extract")
@@ -263,7 +280,7 @@ def prepare_pdf(path: Path, args: argparse.Namespace) -> dict[str, Any]:
     writer.write(blob)
     constraints = {"expected_format": "pdf", "max_kb": args.max_kb, "width": None, "height": None, "max_pages": args.max_pages}
     report = persist_validated(blob.getvalue(), dest, constraints, expected_pages=len(indices))
-    return {"status": "pass", "operation": "prepare-pdf", "input": str(path), "output": str(dest), "selected_pages": [i + 1 for i in indices], "report": report, "warning": "Extracted PDF may lose digital signatures, attachments, form behavior or bookmarks. Check the output before submission. This is not image recompression."}
+    return {"status": "pass", "operation": "prepare-pdf", "input": str(path), "output": str(dest), "selected_pages": [i + 1 for i in indices], "report": report, "duration_ms": round((time.perf_counter() - started) * 1000, 2), "warning": "Extracted PDF may lose digital signatures, attachments, form behavior or bookmarks. Check the output before submission. This is not image recompression."}
 
 
 def positive(value: str) -> int:
