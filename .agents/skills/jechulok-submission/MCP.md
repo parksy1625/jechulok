@@ -1,4 +1,4 @@
-# 제출OK MCP v1.0 — local stdio server
+# 제출OK MCP v1.1 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -416,3 +416,41 @@ Key changes:
 These tests use **synthetic documents**. A machine-checkable `pass` remains
 separate from content correctness, signature validity, visual requirements
 and institutional receipt. See repository-root `SECURITY.md` for details.
+
+
+## v1.1 — Live local connection probe and one-command status
+
+No change to the 14 registered MCP tools or their permission boundaries.
+The new standard-library `setup_mcp.py` CLI commands are **not** new MCP
+tools:
+
+```bash
+# Real local stdio handshake, 14-tool discovery and synthetic rule parser.
+python3 scripts/setup_mcp.py probe --allowed-dir "/absolute/path/to/submission-files"
+
+# Doctor checks first, then handshake; combined JSON result.
+python3 scripts/setup_mcp.py status --allowed-dir "/absolute/path/to/submission-files"
+```
+
+`doctor` only verifies the local runtime/dependencies. `probe` starts a
+child MCP server using the installed `.venv` interpreter, discovers tools,
+and invokes `parse_submission_rules` with **hard-coded synthetic text**
+(`JPG 300×400px 500KB 이하`). It never selects, reads or writes user
+documents, never calls any file-modifying MCP tool and never updates clients'
+configuration. `status` skips the handshake if the environment checks fail.
+
+Failure results provide machine-readable codes such as:
+`venv_missing`, `server_missing`, `connection_timeout`,
+`python_launch_failed`, `unexpected_probe_output`,
+`tools_missing`, and `tool_call_failed`. No child stderr, document data,
+absolute user-file paths or server stack traces are copied into the summary.
+
+**Successful `probe` or `status` only confirms the server's local stdio
+handshake**. It cannot guarantee a third-party AI client loaded the copied
+MCP configuration, accepted permissions or can reach the same filesystem.
+To confirm actual application integration, restart your MCP-capable local
+client and ask it to call `parse_submission_rules` with synthetic text.
+
+CI continues to run on Ubuntu/macOS/Windows with Python 3.11/3.13 and
+performs an additional clean virtual environment install + local probe +
+combined status smoke check on Ubuntu/Python 3.11.
