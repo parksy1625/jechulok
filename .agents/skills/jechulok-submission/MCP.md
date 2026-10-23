@@ -1,4 +1,4 @@
-# 제출OK MCP v0.2 — local stdio server
+# 제출OK MCP v0.3 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -37,6 +37,8 @@ Important: The default allowed directory is the MCP process's working directory,
 | `prepare_image` | JPG/PNG/WebP → new JPG, exact pixels, optional max KB | Creates new file |
 | `extract_pdf_pages` | Create a new PDF with 1-based range like `2-4,7` | Creates new file |
 | `verify_submission` | Reopen output and verify **at least one** explicit condition | No |
+| `parse_submission_rules` | Extract exact technical conditions and flag uncertain ones | No |
+| `prepare_from_requirements` | Prepare a JPG or explicit PDF pages and reverify technical output | Creates a new file |
 
 All tool inputs and outputs refer to **local paths on the MCP server host**, not uploads from ChatGPT or remote URLs. `prepare_image` defaults to `mode="contain"` (white margins, no crop). `mode="cover"` requires the user's explicit permission and `crop_approved=true`.
 
@@ -68,3 +70,12 @@ python -m unittest discover -s tests -v
 The repository's GitHub Actions checks both the CLI and the MCP layer on Python 3.11 and 3.13.
 
 Official MCP SDK: https://py.sdk.modelcontextprotocol.io/
+
+
+## v0.3: Korean submission instructions
+
+`parse_submission_rules(requirements_text=...)` returns a structured `rules` object with format, maximum KB, exact pixel width/height and maximum PDF pages, as well as `issues` and `unsupported_conditions`.
+
+`prepare_from_requirements(input_path, output_path, requirements_text, pages_to_extract=None, mode='contain', crop_approved=False)` refuses to edit when any rule is ambiguous or unverified. For PDF, the maximum number of pages does NOT indicate which pages to discard: supply `pages_to_extract` from the user's explicit instructions. For JPG, `mode='cover'` requires `crop_approved=true` and actual user authorization. Both new and existing tools respect `JECHULOK_ALLOWED_DIRS`, never overwrite existing files and never upload data.
+
+This is deterministic rule parsing, NOT a language model, institution policy database or OCR. Multiple allowed formats, cm/mm, missing pixel units, strict '미만', portrait/background requirements and signatures require manual review. Size values use 1024-based KiB/MiB. An output `pass` attests only to verified technical constraints.

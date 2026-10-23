@@ -36,3 +36,8 @@ Rule checks include `file_signature`, `extension_matches_content`, `format`, `ma
 ## Maintenance
 
 Run `python -m unittest discover -s tests -v` in the skill directory before publishing changes. The GitHub workflow rechecks the same cases on every push and pull request. For future website/CLI parity, extract and test a common algorithm library rather than asserting that the separate implementations are equivalent.
+
+
+## v0.3 rule extraction contract
+
+The `submission_rules.py` parser interprets only explicitly written supported formats, inclusive maximum size limits (KiB/MiB), exact pixel sizes, and inclusive maximum PDF page counts. Ambiguous, conflicting or unsupported conditions return `needs_review`, blocking `prepare_from_requirements` from creating output. PDF page selection must be explicitly supplied separately. Outputs are always new files restricted to permitted local folders and independently verified. File contents, image composition and actual institutional acceptance are out of scope.

@@ -1,11 +1,11 @@
 ---
 name: jechulok-submission
-description: Prepare a JPG image or extract PDF pages to satisfy submission requirements. Use when users ask to resize a photo to exact pixels, limit a JPG file to a KB threshold, inspect image/PDF format and dimensions/pages, or prepare a locally verifiable submission file. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
+description: Parse Korean technical submission criteria, prepare JPG images or selected PDF pages on local disk, and recheck output requirements. Use when users ask to resize a photo to exact pixels, limit a JPG file to a KB threshold, inspect image/PDF format and dimensions/pages, or prepare a locally verifiable submission file. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
 license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # JeChulOK Submission Agent Skill
@@ -23,9 +23,9 @@ python scripts/jechulok.py --help
 
 If dependencies are unavailable, explain that setup failed; do not claim that a file was processed. Processing works offline after installation.
 
-## MCP v0.2 integration (optional)
+## MCP v0.3 integration (optional)
 
-An MCP-capable agent may call four local stdio tools directly: `check_file`,
+An MCP-capable agent may call six local stdio tools directly: `parse_submission_rules`, `prepare_from_requirements`, `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`. If the JeChulOK MCP
 server is connected, prefer these tools over shell commands. See [MCP.md](MCP.md)
 for installation, allowed-directory settings and the security boundary.
@@ -41,6 +41,14 @@ The MCP server only accepts local paths within the configured allowed folders,
 never overwrites files, and requires `crop_approved=true` for center-crop jobs.
 Always run `verify_submission` on the produced file. A `pass` checks only the
 user's explicitly provided technical requirements.
+
+## v0.3 Korean requirements workflow
+
+1. When the user provides submission instructions, call `parse_submission_rules` first (or run `python scripts/jechulok.py parse-rules --text 'JPG 300×400px 500KB 이하'`).
+2. If status is `needs_review` or `no_rules`, do not edit automatically. Confirm ambiguous format choices, units, physical dimensions or unverified requirements with the user.
+3. Call `prepare_from_requirements` only after obtaining unambiguous technical constraints. For PDF, require explicit user-selected `pages_to_extract`. Never infer pages from a maximum page count.
+4. Use `contain` by default; do not use center crop without explicit approval. Keep original input unchanged.
+5. Call `verify_submission` for the output; never confuse technical rule checks with institution acceptance.
 
 ## Decision flow
 
