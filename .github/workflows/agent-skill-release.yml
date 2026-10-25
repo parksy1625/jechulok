@@ -1,8 +1,8 @@
-name: JeChulOK Agent Skill Release v2.1
+name: JeChulOK Agent Skill Release v2.2
 on:
   push:
     tags:
-      - 'v2.1.0'
+      - 'v2.2.0'
 permissions:
   contents: read
 concurrency:
@@ -11,7 +11,7 @@ concurrency:
 jobs:
   publish:
     name: Verify tagged source and publish checked artifacts
-    if: startsWith(github.ref, 'refs/tags/v2.1.0')
+    if: startsWith(github.ref, 'refs/tags/v2.2.0')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -37,17 +37,17 @@ jobs:
           python -m unittest discover -s tests -v
           mkdir -p "$RUNNER_TEMP/jechulok-release"
           python scripts/release_v20.py build --output-dir "$RUNNER_TEMP/jechulok-release"
-          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-release/jechulok-agent-skill-v2.1.0.zip"
+          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-release/jechulok-agent-skill-v2.2.0.zip"
           cd "$RUNNER_TEMP/jechulok-release"
-          sha256sum -c jechulok-agent-skill-v2.1.0.sha256
-      - name: Publish only for the explicitly created v2.1.0 Git tag
+          sha256sum -c jechulok-agent-skill-v2.2.0.sha256
+      - name: Publish only for the explicitly created v2.2.0 Git tag
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            "$RUNNER_TEMP/jechulok-release/jechulok-agent-skill-v2.1.0.zip" \
-            "$RUNNER_TEMP/jechulok-release/jechulok-agent-skill-v2.1.0.sha256" \
+            "$RUNNER_TEMP/jechulok-release/jechulok-agent-skill-v2.2.0.zip" \
+            "$RUNNER_TEMP/jechulok-release/jechulok-agent-skill-v2.2.0.sha256" \
             --verify-tag \
-            --title "JeChulOK Agent Skill v2.1.0" \
-            --notes-file .agents/skills/jechulok-submission/RELEASE_NOTES_v21.md
+            --title "JeChulOK Agent Skill v2.2.0" \
+            --notes-file .agents/skills/jechulok-submission/RELEASE_NOTES_v22.md
