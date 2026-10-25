@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK v2.2 installation, local diagnostics and opt-in MCP client config.
+"""JeChulOK v2.3 installation, local diagnostics and opt-in MCP client config.
 
 Standard-library only. Importing the module never installs dependencies,
 edits Codex/Claude/Cursor settings, or launches the MCP server.
@@ -18,6 +18,7 @@ import venv
 from diagnostics_v21 import installation_checks
 from version_check_v21 import check_latest
 from onboarding_v22 import guide as build_guide, render_text
+from recovery_plan_v23 import plan_recovery
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SERVER_SCRIPT = SKILL_ROOT / "scripts" / "mcp_server.py"
@@ -263,7 +264,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="JeChulOK local-only MCP setup. Never changes client settings."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("install", "doctor", "config", "probe", "status", "upgrade", "updates", "beta-check", "guide"):
+    for command in ("install", "doctor", "config", "probe", "status", "upgrade", "updates", "beta-check", "guide", "recovery-plan"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--allowed-dir", required=True,
                          help="Existing canonical local directory containing your submission files")
@@ -279,13 +280,14 @@ def build_parser() -> argparse.ArgumentParser:
         if command == "updates":
             cmd.add_argument("--online", action="store_true",
                              help="Explicit opt-in: query GitHub releases/latest over HTTPS; never download")
-        if command == "upgrade":
+        if command in {"upgrade", "recovery-plan"}:
             cmd.add_argument("--archive", type=Path, required=True,
                              help="Trusted locally downloaded versioned release ZIP")
             cmd.add_argument("--destination", type=Path, required=True,
                              help="NEW empty/nonexistent destination folder, never the current installation")
-            cmd.add_argument("--execute", action="store_true",
-                             help="Create the new side-by-side copy after preview")
+            if command == "upgrade":
+                cmd.add_argument("--execute", action="store_true",
+                                 help="Create the new side-by-side copy after preview")
     return parser
 
 
@@ -293,6 +295,10 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         root = allowed_directory(args.allowed_dir)
+        if args.command == "recovery-plan":
+            result = plan_recovery(args.archive, args.destination, installed_root=SKILL_ROOT)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0 if result["status"] == "planned" else 1
         if args.command == "guide":
             doctor = environment_report(root, venv_python())
             connection = (
