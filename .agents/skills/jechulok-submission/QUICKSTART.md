@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v2.2 빠른 시작
+# 제출OK Agent Skill + MCP v2.3 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -383,3 +383,34 @@ python scripts/setup_mcp.py guide --allowed-dir "/WORK/FOLDER"
 실행하지 말고**, 신뢰할 수 있는 GitHub 아티팩트에서 새 파일을
 확보해 **다른 폴더에 설치**하세요. 어떤 단계도 개인 서류를
 자동 처리하거나 기관에 제출하지 않습니다.
+
+
+## 16. 설치가 손상됐을 때 안전하게 복구하기 (v2.3)
+
+먼저 신뢰할 수 있는 다른 설치본의 `setup_mcp.py`에서만
+**읽기 전용 복구 계획**을 확인하세요. 손상된 설치본의 코드나
+설치 스크립트를 계속 실행하지 마세요.
+
+```bash
+python scripts/setup_mcp.py recovery-plan \
+  --allowed-dir "/WORK/FOLDER" \
+  --archive "/DOWNLOAD/jechulok-agent-skill-v2.3.0.zip" \
+  --destination "/NEW/FOLDER/jechulok-v23"
+```
+
+`status=planned`면 ZIP 내부 일관성과 새 설치 위치가 확인된
+것이지 **발행자 서명이나 실제 복구 완료**가 아닙니다. 이
+명령은 파일을 만들지 않습니다.
+
+신뢰할 수 있는 원본을 검증하고 사용자가 명시적으로 승인한
+뒤에만 기존 `upgrade` 명령에 `--execute`를 붙여 새 폴더에
+압축을 풉니다. 새 폴더에서 의존성 설치→doctor→probe→config
+순서로 검사하고, 최종 MCP 클라이언트 설정은 **직접 확인 후
+변경**하세요. 기존 설치와 설정을 남겨두면 수동 복귀가 가능합니다.
+
+합성 환경에서 전체 복구 과정을 점검하려면:
+
+`python scripts/recovery_scenarios_v23.py --check`
+
+통제된 **14개 테스트**이지 실제 외부 사용자 조사가 아닙니다.
+실제 사용자 문서를 입력하거나 기관에 접수하지 않습니다.
