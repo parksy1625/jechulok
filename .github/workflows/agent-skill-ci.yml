@@ -217,12 +217,12 @@ jobs:
           from pathlib import Path
           data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-beta-check.json").read_text())
           assert data["status"] == "pass", data
-          assert data["version"] == "2.1.0"
+          assert data["version"] == "2.2.0"
           assert data["tool_count"] == 20
           assert data["network_used"] is False
           assert data["documents_read"] is False
           assert data["client_configuration_changed"] is False
-          print("v2.1 privacy-safe beta check OK")
+          print("v2.2 privacy-safe beta check OK")
           PY
           python scripts/setup_mcp.py config --client codex --allowed-dir "$PWD" > "$RUNNER_TEMP/jechulok-codex.toml"
           python - <<'PY'
