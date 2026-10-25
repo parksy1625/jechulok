@@ -9,6 +9,8 @@ installation already identified as tampered).
 from __future__ import annotations
 
 from pathlib import Path
+import zipfile
+import json
 from typing import Any
 
 from diagnostics_v21 import installation_checks
@@ -52,7 +54,7 @@ def plan_recovery(archive: Path, new_directory: Path, *, installed_root: Path) -
         # Underlying verification rejects invalid archives, existing targets,
         # symlinks and noncanonical parent paths without extracting anything.
         preview = extract(archive, new_directory, execute=False)
-    except (ValueError, OSError, KeyError, RuntimeError, TypeError):
+    except (ValueError, OSError, KeyError, RuntimeError, TypeError, zipfile.BadZipFile, json.JSONDecodeError):
         return {
             **common, "status": "blocked",
             "blocker": "invalid_archive_or_destination",
