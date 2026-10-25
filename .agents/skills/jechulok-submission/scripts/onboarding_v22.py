@@ -77,7 +77,8 @@ COMMANDS = {
     "probe": "python scripts/setup_mcp.py probe --allowed-dir YOUR_FOLDER",
     "client_config": "python scripts/setup_mcp.py config --client CLIENT --allowed-dir YOUR_FOLDER",
     "recheck": "python scripts/setup_mcp.py guide --allowed-dir YOUR_FOLDER",
-    "upgrade": "python scripts/setup_mcp.py upgrade --allowed-dir YOUR_FOLDER --archive TRUSTED_ZIP --destination NEW_FOLDER",
+    # Intentionally no executable suggestion for corrupt/untrusted sources:
+    # even a local setup_mcp.py could have been modified with the package.
 }
 
 
