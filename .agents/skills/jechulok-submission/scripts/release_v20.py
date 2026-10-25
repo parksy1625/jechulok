@@ -20,7 +20,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_FILE = ROOT / "VERSION"
 ARCHIVE_ROOT = "jechulok-submission"
-RELEASE_VERSION = "2.1.0"
+RELEASE_VERSION = "2.2.0"
 MANIFEST_NAME = f"{ARCHIVE_ROOT}/MANIFEST.json"
 MAX_ARCHIVE_SIZE = 32 * 1024 * 1024
 MAX_MEMBER_SIZE = 2 * 1024 * 1024
