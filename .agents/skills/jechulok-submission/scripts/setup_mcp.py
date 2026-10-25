@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK v2.1 installation, local diagnostics and opt-in MCP client config.
+"""JeChulOK v2.2 installation, local diagnostics and opt-in MCP client config.
 
 Standard-library only. Importing the module never installs dependencies,
 edits Codex/Claude/Cursor settings, or launches the MCP server.
@@ -17,6 +17,7 @@ import venv
 
 from diagnostics_v21 import installation_checks
 from version_check_v21 import check_latest
+from onboarding_v22 import guide as build_guide, render_text
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SERVER_SCRIPT = SKILL_ROOT / "scripts" / "mcp_server.py"
@@ -262,18 +263,25 @@ def build_parser() -> argparse.ArgumentParser:
         description="JeChulOK local-only MCP setup. Never changes client settings."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("install", "doctor", "config", "probe", "status", "upgrade", "updates", "beta-check"):
+    for command in ("install", "doctor", "config", "probe", "status", "upgrade", "updates", "beta-check", "guide"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--allowed-dir", required=True,
                          help="Existing canonical local directory containing your submission files")
-        if command == "config":
+        if command in {"config", "guide"}:
             cmd.add_argument("--client", choices=CLIENTS, default="codex")
+        if command == "guide":
+            cmd.add_argument("--language", choices=("ko", "en"), default="ko",
+                             help="Plain-language Korean/English instructions")
+            cmd.add_argument("--format", choices=("text", "json"), default="text",
+                             help="Screen-reader-friendly plain text or structured JSON")
+            cmd.add_argument("--probe", action="store_true",
+                             help="Explicitly test local MCP stdio only when doctor passes")
         if command == "updates":
             cmd.add_argument("--online", action="store_true",
                              help="Explicit opt-in: query GitHub releases/latest over HTTPS; never download")
         if command == "upgrade":
             cmd.add_argument("--archive", type=Path, required=True,
-                             help="Trusted locally downloaded v2.0 release ZIP")
+                             help="Trusted locally downloaded versioned release ZIP")
             cmd.add_argument("--destination", type=Path, required=True,
                              help="NEW empty/nonexistent destination folder, never the current installation")
             cmd.add_argument("--execute", action="store_true",
@@ -285,6 +293,25 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         root = allowed_directory(args.allowed_dir)
+        if args.command == "guide":
+            doctor = environment_report(root, venv_python())
+            connection = (
+                probe_connection(root, venv_python())
+                if args.probe and doctor["status"] == "pass"
+                else None
+            )
+            guidance = build_guide(
+                doctor, client=args.client,
+                language=args.language, probe=connection,
+            )
+            # Guided status is deliberately not treated as a failed command:
+            # setup problems are the reason users invoke this read-only guide.
+            print(
+                json.dumps(guidance, ensure_ascii=False, indent=2)
+                if args.format == "json" else render_text(guidance),
+                end="" if args.format == "text" else "\n",
+            )
+            return 0
         if args.command == "updates":
             version = (SKILL_ROOT / "VERSION").read_text(encoding="utf-8").strip()
             result = check_latest(version, online=args.online)
