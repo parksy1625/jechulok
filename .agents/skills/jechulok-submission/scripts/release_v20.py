@@ -20,7 +20,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_FILE = ROOT / "VERSION"
 ARCHIVE_ROOT = "jechulok-submission"
-RELEASE_VERSION = "2.0.0"
+RELEASE_VERSION = "2.1.0"
 MANIFEST_NAME = f"{ARCHIVE_ROOT}/MANIFEST.json"
 MAX_ARCHIVE_SIZE = 32 * 1024 * 1024
 MAX_MEMBER_SIZE = 2 * 1024 * 1024
@@ -28,7 +28,7 @@ MAX_UNCOMPRESSED_SIZE = 32 * 1024 * 1024
 FIXED_TIME = (2026, 1, 1, 0, 0, 0)
 ROOT_FILES = (
     "VERSION", "SKILL.md", "MCP.md", "QUICKSTART.md",
-    "EVALUATION.md", "REAL_EVALUATION.md", "RELEASE_NOTES_v2.md", "LICENSE",
+    "EVALUATION.md", "REAL_EVALUATION.md", "RELEASE_NOTES_v2.md", "BETA_GUIDE.md", "LICENSE",
     "requirements.txt", "requirements-mcp.txt",
 )
 
@@ -207,6 +207,10 @@ def extract(archive_path: Path, destination: Path, *, execute: bool = False) -> 
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("xb") as fp:
                     fp.write(z.read(f"{ARCHIVE_ROOT}/{rel}"))
+        # Persist the exact manifest from the verified archive for local
+        # read-only doctor checks. This attests file consistency only.
+        with (stage / "MANIFEST.json").open("xb") as fp:
+            fp.write(z.read(MANIFEST_NAME))
         if target.exists() or target.is_symlink():
             raise ValueError("Destination changed during extraction")
         stage.rename(target)
