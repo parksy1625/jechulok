@@ -25,7 +25,7 @@ class ReleaseV20Tests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.directory = Path(self.temporary.name).resolve()
-        self.archive_name = "jechulok-agent-skill-v2.0.0.zip"
+        self.archive_name = "jechulok-agent-skill-v2.1.0.zip"
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -34,9 +34,9 @@ class ReleaseV20Tests(unittest.TestCase):
         result = build(self.directory)
         archive = self.directory / self.archive_name
         self.assertEqual(result["status"], "built")
-        self.assertEqual(result["version"], "2.0.0")
+        self.assertEqual(result["version"], "2.1.0")
         self.assertTrue(archive.is_file())
-        self.assertTrue((self.directory / "jechulok-agent-skill-v2.0.0.sha256").is_file())
+        self.assertTrue((self.directory / "jechulok-agent-skill-v2.1.0.sha256").is_file())
         checked = verify(archive)
         self.assertEqual(checked["archive_sha256"], hashlib.sha256(archive.read_bytes()).hexdigest())
         self.assertEqual(checked["status"], "verified")
@@ -50,9 +50,9 @@ class ReleaseV20Tests(unittest.TestCase):
                                  or "/tests/" in x or "pycache" in x
                                  or ".jechulok-jobs" in x for x in names))
             manifest = json.loads(z.read(MANIFEST_NAME))
-            self.assertEqual(manifest["version"], "2.0.0")
+            self.assertEqual(manifest["version"], "2.1.0")
             self.assertEqual(len(manifest["files"]), checked["file_count"])
-        lines = (self.directory / "jechulok-agent-skill-v2.0.0.sha256").read_text()
+        lines = (self.directory / "jechulok-agent-skill-v2.1.0.sha256").read_text()
         self.assertEqual(lines, f"{checked['archive_sha256']}  {archive.name}\n")
 
     def test_rebuilding_from_unchanged_sources_is_byte_identical(self):
@@ -80,7 +80,7 @@ class ReleaseV20Tests(unittest.TestCase):
         self.assertFalse(installed["automatic_client_reregistration"])
         self.assertTrue((destination / "scripts" / "mcp_server.py").exists())
         self.assertTrue((destination / "scripts" / "setup_mcp.py").exists())
-        self.assertEqual((destination / "VERSION").read_text().strip(), "2.0.0")
+        self.assertEqual((destination / "VERSION").read_text().strip(), "2.1.0")
         self.assertEqual(original_marker.read_text(), "DO NOT REPLACE")
         with self.assertRaises(ValueError):
             extract(archive, destination, execute=True)
@@ -157,7 +157,7 @@ class ExtractedMCPV20Tests(unittest.IsolatedAsyncioTestCase):
             directory = Path(temp).resolve()
             build(directory)
             destination = directory / "installed"
-            extract(directory / "jechulok-agent-skill-v2.0.0.zip", destination, execute=True)
+            extract(directory / "jechulok-agent-skill-v2.1.0.zip", destination, execute=True)
             work_folder = directory / "user-work"
             work_folder.mkdir()
             params = StdioServerParameters(
