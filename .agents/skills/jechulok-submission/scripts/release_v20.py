@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK 2.0: deterministic, local-only release ZIP and safe side-by-side extraction.
+"""JeChulOK 2.3: deterministic, local-only release ZIP and safe side-by-side extraction.
 
 Standard library only. Not a publisher, network client, digital signature
 or a magic upgrade of running MCP hosts.
@@ -28,7 +28,7 @@ MAX_UNCOMPRESSED_SIZE = 32 * 1024 * 1024
 FIXED_TIME = (2026, 1, 1, 0, 0, 0)
 ROOT_FILES = (
     "VERSION", "SKILL.md", "MCP.md", "QUICKSTART.md",
-    "EVALUATION.md", "REAL_EVALUATION.md", "RELEASE_NOTES_v2.md", "RELEASE_NOTES_v21.md", "RELEASE_NOTES_v22.md", "BETA_GUIDE.md", "LICENSE",
+    "EVALUATION.md", "REAL_EVALUATION.md", "RELEASE_NOTES_v2.md", "RELEASE_NOTES_v21.md", "RELEASE_NOTES_v22.md", "RELEASE_NOTES_v23.md", "BETA_GUIDE.md", "LICENSE",
     "requirements.txt", "requirements-mcp.txt",
 )
 
@@ -228,7 +228,7 @@ def extract(archive_path: Path, destination: Path, *, execute: bool = False) -> 
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description="JeChulOK v2.0 offline release packaging / verification")
+    p = argparse.ArgumentParser(description="JeChulOK v2.3 offline release packaging / verification")
     sub = p.add_subparsers(dest="command", required=True)
     pack = sub.add_parser("build")
     pack.add_argument("--output-dir", type=Path, required=True)
