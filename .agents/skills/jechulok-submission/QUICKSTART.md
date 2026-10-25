@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v2.0 빠른 시작
+# 제출OK Agent Skill + MCP v2.1 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -326,3 +326,37 @@ python scripts/setup_mcp.py upgrade \
 정식 태그 기반 릴리스는 별도 `v2.0.0` Git 태그가 실제로
 푸시된 경우에만 시작됩니다. 현재 Actions 아티팩트의 30일 보관과
 태그 기반 Release 영구 배포는 서로 다릅니다.
+
+
+## 14. v2.1 업데이트 확인과 베타 테스트 진단
+
+다음 명령은 모두 로컬 폴더에 있는 파일을 처리하지 않고
+상태를 점검합니다.
+
+```bash
+python scripts/setup_mcp.py doctor --allowed-dir "/USER/WORK/FOLDER"
+python scripts/setup_mcp.py probe --allowed-dir "/USER/WORK/FOLDER"
+python scripts/setup_mcp.py beta-check --allowed-dir "/USER/WORK/FOLDER"
+python scripts/setup_mcp.py updates --allowed-dir "/USER/WORK/FOLDER"
+```
+
+기본 `updates`는 **네트워크를 사용하지 않습니다**. 사용자가
+GitHub에 접속해 게시된 안정 버전을 알아보려면 다음을 **명시적으로**
+실행해야 합니다.
+
+```bash
+python scripts/setup_mcp.py updates --allowed-dir "/USER/WORK/FOLDER" --online
+```
+
+이 요청은 GitHub API의 릴리스 메타데이터만 읽으며, 설치 프로그램을
+내려받거나 실행하지 않습니다. 릴리스가 게시되지 않았다면
+`no_published_release`를 반환할 수 있습니다.
+
+ZIP에서 설치한 경우 `doctor`는 MANIFEST.json의 파일별 체크섬과
+실제 설치 파일을 비교합니다. Git 저장소 체크아웃은 매니페스트가
+없으므로 무결성 확인이 생략되었다고 출력합니다. 매니페스트도
+변조될 수 있어 전자서명이나 발행자 인증 수단은 아닙니다.
+
+외부 테스트는 개인 서류가 없는 **별도 합성 데이터 폴더**에서만
+진행하고, 문제를 제보할 때 실제 파일 경로·스크린샷·원문을
+업로드하지 마세요. 자세한 절차는 `BETA_GUIDE.md`를 참고하세요.
