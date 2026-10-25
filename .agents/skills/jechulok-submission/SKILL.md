@@ -5,10 +5,39 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.1 — Explicit opt-in update checks and manifest-backed local doctor
+
+No MCP tool count or execution consent changes; **20 tools** remain.
+
+The setup CLI now supports `updates`. Without `--online`, the command
+reads local version metadata only and performs **zero network requests**.
+With explicit `--online`, it requests the fixed GitHub HTTPS endpoint for
+the latest **published stable release**, validates bounded metadata and
+compares strict version triplets. It never downloads, installs or transmits
+document data. Missing published releases or network errors are reported
+without modifying the installation.
+
+`doctor` verifies the VERSION/SKILL.md metadata and, **only when a
+packaged installation includes MANIFEST.json**, checks the hashes and byte
+lengths of each installed source file. A Git checkout is marked
+**not manifest verified** rather than inaccurately passing integrity.
+This self-contained manifest is not a publisher signature and cannot
+authenticate the source if the manifest and code were both tampered with.
+
+`beta-check` produces a local-only compact diagnostic. It checks Python,
+dependency imports, source consistency and real MCP stdio connection.
+It does not inspect applicant documents or send telemetry. It also cannot
+confirm that an external host IDE registered the MCP server.
+
+Read BETA_GUIDE.md for an opt-in, synthetic-data tester protocol, and
+RELEASE_NOTES_v21.md for limitations. No real external beta feedback or
+independent audit has been collected in this release.
+
 
 ## v2.0 — Tested portable ZIP and opt-in side-by-side upgrade
 
