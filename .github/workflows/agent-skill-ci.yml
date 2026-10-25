@@ -69,11 +69,14 @@ jobs:
         working-directory: .agents/skills/jechulok-submission
         shell: bash
         run: |
-          python scripts/setup_mcp.py updates --allowed-dir "$PWD" > "$RUNNER_TEMP/jechulok-version-check.json"
           python - <<'PY'
-          import json, os
+          import json, subprocess, sys
           from pathlib import Path
-          result = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-version-check.json").read_text())
+          outcome = subprocess.run([
+              sys.executable, "scripts/setup_mcp.py", "updates",
+              "--allowed-dir", str(Path.cwd().resolve())
+          ], capture_output=True, text=True, check=True)
+          result = json.loads(outcome.stdout)
           assert result["current_version"] == "2.1.0"
           assert result["status"] == "offline"
           assert not result["download_performed"]
