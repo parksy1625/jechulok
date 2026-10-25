@@ -5,10 +5,35 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.1.0"
+  version: "2.2.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.2 — Accessible, read-only onboarding and safe repair priorities
+
+`python scripts/setup_mcp.py guide --allowed-dir YOUR_FOLDER` is a
+**read-only, Korean-language** setup wizard in plain text. It supports
+`--language en`, `--format json`, and `--client codex|cursor|claude-desktop`.
+No ANSI colors, private work paths, document content or subprocess logs
+are exposed in the guide output.
+
+The guide prioritizes dangerous VERSION/manifest inconsistencies over
+ordinary venv/dependency failures. On source tampering, it refuses to
+suggest executing a potentially modified installer; the user must obtain
+a trusted copy separately and install into a new folder.
+
+When doctor passes, the guide presents `probe` as a separate step.
+It **never launches a probe unless `--probe` is explicitly supplied**.
+After a successful 20-tool stdio handshake it suggests a copy-only MCP
+client config command; it never edits host settings or verifies host
+registration. Only the user can separately approve installs/repairs.
+
+This feature does not add MCP tools (20 remain), network calls, telemetry,
+automatic repair, file conversions, or institutional uploads. Run the
+v2.2 ZIP packaging/integration suite before distributing the version.
+See RELEASE_NOTES_v22.md and QUICKSTART.md.
+
 
 ## v2.1 — Explicit opt-in update checks and manifest-backed local doctor
 
