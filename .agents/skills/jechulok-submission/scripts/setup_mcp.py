@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK v1.1 installation, local diagnostics and opt-in MCP client config.
+"""JeChulOK v2.1 installation, local diagnostics and opt-in MCP client config.
 
 Standard-library only. Importing the module never installs dependencies,
 edits Codex/Claude/Cursor settings, or launches the MCP server.
@@ -14,6 +14,9 @@ from pathlib import Path
 import subprocess
 import sys
 import venv
+
+from diagnostics_v21 import installation_checks
+from version_check_v21 import check_latest
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SERVER_SCRIPT = SKILL_ROOT / "scripts" / "mcp_server.py"
@@ -103,6 +106,8 @@ def environment_report(allowed_root: Path, python_path: Path) -> dict[str, objec
         "detail": "Virtual environment interpreter available" if python_path.is_file() else "Virtual environment interpreter missing",
         "fix": "Run 'install --allowed-dir YOUR_FOLDER' to create the isolated environment.",
     })
+    # Local source diagnostics never inspect personal submission files.
+    checks.extend(installation_checks(SKILL_ROOT))
     if python_path.is_file():
         snippet = (
             "import json\n"
@@ -257,12 +262,15 @@ def build_parser() -> argparse.ArgumentParser:
         description="JeChulOK local-only MCP setup. Never changes client settings."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("install", "doctor", "config", "probe", "status", "upgrade"):
+    for command in ("install", "doctor", "config", "probe", "status", "upgrade", "updates", "beta-check"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--allowed-dir", required=True,
                          help="Existing canonical local directory containing your submission files")
         if command == "config":
             cmd.add_argument("--client", choices=CLIENTS, default="codex")
+        if command == "updates":
+            cmd.add_argument("--online", action="store_true",
+                             help="Explicit opt-in: query GitHub releases/latest over HTTPS; never download")
         if command == "upgrade":
             cmd.add_argument("--archive", type=Path, required=True,
                              help="Trusted locally downloaded v2.0 release ZIP")
@@ -277,6 +285,38 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         root = allowed_directory(args.allowed_dir)
+        if args.command == "updates":
+            version = (SKILL_ROOT / "VERSION").read_text(encoding="utf-8").strip()
+            result = check_latest(version, online=args.online)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            # Offline/no published release/unavailable are not fatal to local installation.
+            return 0 if result["status"] in {
+                "offline", "update_available", "up_to_date",
+                "local_newer", "no_published_release"
+            } else 1
+        if args.command == "beta-check":
+            doctor = environment_report(root, venv_python())
+            check = (
+                probe_connection(root, venv_python())
+                if doctor["status"] == "pass" else {"status": "skipped"}
+            )
+            result = {
+                "status": "pass" if doctor["status"] == check["status"] == "pass"
+                          else "needs_attention",
+                "version": (SKILL_ROOT / "VERSION").read_text(encoding="utf-8").strip(),
+                "checks": [
+                    {"id": row["id"], "passed": row["passed"],
+                     "fix": row["fix"]}
+                    for row in doctor["checks"]
+                ],
+                "mcp_connection": check["status"],
+                "tool_count": check.get("tool_count") if check["status"] == "pass" else None,
+                "network_used": False, "client_configuration_changed": False,
+                "documents_read": False, "institutional_submission_tested": False,
+                "feedback_instructions": "Review BETA_GUIDE.md. Share only redacted failure codes, never personal paths or documents.",
+            }
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0 if result["status"] == "pass" else 1
         if args.command == "upgrade":
             result = prepare_upgrade(args.archive, args.destination, execute=args.execute)
             print(json.dumps(result, ensure_ascii=False, indent=2))
