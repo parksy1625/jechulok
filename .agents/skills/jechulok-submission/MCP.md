@@ -1,4 +1,4 @@
-# 제출OK MCP v2.0 — local stdio server
+# 제출OK MCP v2.1 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -802,3 +802,25 @@ dependency install and explicit MCP client config update.
 See RELEASE_NOTES_v2.md for commands and limitations, including the
 unsigned archive, version-ranged dependencies, and advisory nature of
 checksums. This package is **not** independently security audited.
+
+
+## v2.1 — User-triggered release check and installation diagnostics
+
+The 20 MCP tools are unchanged. Updates are not pushed by the MCP server.
+
+- `setup_mcp.py updates --allowed-dir YOUR_FOLDER` reads the local version,
+  makes no network request and never modifies anything.
+- An additional **explicit** `--online` option requests bounded release
+  metadata from the fixed HTTPS GitHub Releases API. No download,
+  updater or remote data transmission of documents is added.
+- `doctor` verifies version/frontmatter metadata. On extracted v2.1 ZIP
+  installs, a stored `MANIFEST.json` is used for local file consistency
+  checking. A source checkout is correctly shown as having **no bundled
+  manifest to verify**.
+- `beta-check` provides a concise read-only health and stdio probe report
+  without printing private document paths.
+
+The package hashes are consistency checks, not digital signatures.
+A passing beta-check cannot verify an IDE configuration, external
+institutional acceptance or actual human beta use. Full steps are in
+BETA_GUIDE.md and RELEASE_NOTES_v21.md.
