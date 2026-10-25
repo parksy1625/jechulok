@@ -2,9 +2,29 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v2.1.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v2.2.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v2.2: 사용자 친화적 설치·복구 안내
+
+새 `guide` 명령으로 설치 상태를 **단계별 한국어/영어 설명**으로
+확인할 수 있어. 사용자가 무엇을 고쳐야 할지 먼저 안내하지만
+자동 설치나 파일 권한 변경은 하지 않아.
+
+- `setup_mcp.py guide --allowed-dir YOUR_FOLDER`: 읽기 전용 한국어 안내
+- `--language en`: 영어 설명, `--format json`: 프로그램에서 활용할 수 있는 결과
+- `--client codex|cursor|claude-desktop`: 해당 클라이언트의 수동 설정 단계 표시
+- `--probe`: 사용자 요청 시에만 **로컬 MCP 연결을 실제로 검사**
+- 배포 파일 무결성 오류가 있으면 작업을 중지하고 안전한 새 설치를 권장.
+  **손상된 현재 설치 프로그램을 실행하도록 안내하지 않음**
+- 색상에 의존하지 않는 번호·설명 중심의 터미널 안내로 접근성 개선
+
+기존 MCP 도구 **20개**와 파일 생성 승인·로컬 처리 정책을 유지했어.
+공식 ZIP은 v2.2.0으로 갱신되며, 실제 외부 베타 사용자 검증이나
+독립 보안감사가 완료된 것으로 의미하지 않아.
+
+**[v2.2 릴리스 노트](.agents/skills/jechulok-submission/RELEASE_NOTES_v22.md)**
 
 ### v2.1: 명시적 업데이트 확인 · 설치 무결성 검사 · 베타 진단
 
@@ -302,7 +322,7 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v2.1 — AI가 직접 호출하는 로컬 도구
+## MCP v2.2 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`, `assist_submission` 등의 20개 도구를
@@ -314,7 +334,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v2.1 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v2.2 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
