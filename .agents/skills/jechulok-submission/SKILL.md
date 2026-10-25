@@ -5,10 +5,35 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.2.0"
+  version: "2.3.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.3 — Explicit, read-only recovery plan and 14 synthetic lifecycle regressions
+
+`python scripts/setup_mcp.py recovery-plan --allowed-dir YOUR_WORK_FOLDER
+--archive TRUSTED_RELEASE_ZIP --destination NEW_SKILL_FOLDER` inspects the
+current skill's VERSION/manifest diagnostics and validates a manually
+provided portable ZIP and nonexistent destination. This command is
+**read-only**, omits sensitive absolute paths and returns sanitized JSON
+with the safe **manual** extraction, dependency-install, MCP recheck and
+client-configuration switch/rollback sequence. It does not execute a
+possibly compromised old installation, authenticate a publisher, install
+dependencies or modify user files. Always run it from a **trusted copy**.
+
+`python scripts/recovery_scenarios_v23.py --check` runs **14 disposable
+synthetic** lifecycle/error/rollback scenarios: verified ZIP, read-only
+preview, deliberate old-source corruption, unsafe destination/archive
+rejection, new side-by-side extraction, local manifest validation,
+copy-only client configuration, actual 20-tool stdio MCP handshake and
+preservation of mock user files. CI uploads its aggregate report.
+This is NOT real human beta validation; it does not install a new venv
+in the recovered copy. The independent real fresh-vEnv CI test remains.
+
+No new MCP tool, network client, automatic update, client config editing
+or file-creation consent was added. See RELEASE_NOTES_v23.md and SECURITY.md.
+
 
 ## v2.2 — Accessible, read-only onboarding and safe repair priorities
 
