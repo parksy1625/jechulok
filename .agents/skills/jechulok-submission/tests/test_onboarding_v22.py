@@ -51,7 +51,7 @@ class OnboardingV22Tests(unittest.TestCase):
         self.assertEqual(r["reason_code"], "source_manifest")
         self.assertEqual(r["next_action"], "upgrade")
         self.assertEqual(r["stage"], 1)
-        self.assertIn("NEW_FOLDER", r["suggested_command"])
+        self.assertIsNone(r["suggested_command"])  # Do not run scripts from tampered install.
         self.assertFalse(r["packaged_manifest_verified"])
         self.assertFalse(r["automatic_permission_change"])
         self.assertFalse(r["client_config_modified"])
