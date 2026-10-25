@@ -2,9 +2,29 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v2.2.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v2.3.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v2.3: 설치·오류 복구 전 과정 자동 검증
+
+신뢰할 수 있는 ZIP과 새 설치 폴더를 확인하는 **읽기 전용
+`recovery-plan` 명령**을 추가했습니다. 원래 설치를 보존하고,
+사용자가 별도로 승인해야 하는 복구 절차만 안내합니다.
+
+- 정상 설치 → 이전 설치 손상 → 손상 탐지 → 새 ZIP 검증 →
+  새 폴더 복원 → MCP 재연결 → 클라이언트 설정 확인
+- 임시 합성 데이터로 **14개 복구 시나리오**를 자동 실행합니다.
+- 비정상 ZIP·기존 파일과 충돌하는 설치 경로·파일 해시 변조를
+  거부하고, 기존 사용자 자료와 앱 설정 보존 여부를 검사합니다.
+- 추출된 MCP 서버가 실제로 20개 도구에 응답하는지 확인합니다.
+- GitHub Actions에 복구 평가 결과 JSON과 v2.3 배포 ZIP을 생성합니다.
+
+**실제 이용자 14명이 테스트한 것이 아니라, 통제된 합성 시나리오
+14건**이라는 점을 구분해야 합니다. 새 설치의 독립된 가상환경
+설치, 사용자 앱 등록 및 수동 복구 절차는 여전히 따로 진행해야 합니다.
+
+**[v2.3 릴리스 노트](.agents/skills/jechulok-submission/RELEASE_NOTES_v23.md)**
 
 ### v2.2: 사용자 친화적 설치·복구 안내
 
@@ -322,7 +342,7 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v2.2 — AI가 직접 호출하는 로컬 도구
+## MCP v2.3 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`, `assist_submission` 등의 20개 도구를
@@ -334,7 +354,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v2.2 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v2.3 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
