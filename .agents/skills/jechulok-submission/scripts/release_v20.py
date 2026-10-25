@@ -201,7 +201,8 @@ def extract(archive_path: Path, destination: Path, *, execute: bool = False) -> 
     stage = Path(tempfile.mkdtemp(prefix=".jechulok-release-", dir=str(target.parent)))
     try:
         with zipfile.ZipFile(archive_path, "r") as z:
-            files = json.loads(z.read(MANIFEST_NAME))["files"]
+            verified_manifest = z.read(MANIFEST_NAME)
+            files = json.loads(verified_manifest)["files"]
             for rel in sorted(files):
                 path = stage / rel
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -210,7 +211,7 @@ def extract(archive_path: Path, destination: Path, *, execute: bool = False) -> 
         # Persist the exact manifest from the verified archive for local
         # read-only doctor checks. This attests file consistency only.
         with (stage / "MANIFEST.json").open("xb") as fp:
-            fp.write(z.read(MANIFEST_NAME))
+            fp.write(verified_manifest)
         if target.exists() or target.is_symlink():
             raise ValueError("Destination changed during extraction")
         stage.rename(target)
