@@ -41,28 +41,28 @@ jobs:
       - name: Run CLI + MCP + end-to-end release tests
         working-directory: .agents/skills/jechulok-submission
         run: python -m unittest discover -s tests -v
-      - name: Build and verify v2.2 portable Agent Skill ZIP (Linux 3.11)
+      - name: Build and verify v2.3 portable Agent Skill ZIP (Linux 3.11)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         working-directory: .agents/skills/jechulok-submission
         shell: bash
         run: |
-          mkdir -p "$RUNNER_TEMP/jechulok-v22"
-          python scripts/release_v20.py build --output-dir "$RUNNER_TEMP/jechulok-v22"
-          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-v22/jechulok-agent-skill-v2.2.0.zip"
+          mkdir -p "$RUNNER_TEMP/jechulok-v23"
+          python scripts/release_v20.py build --output-dir "$RUNNER_TEMP/jechulok-v23"
+          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-v23/jechulok-agent-skill-v2.3.0.zip"
           python - <<'PY'
           import os
           from pathlib import Path
-          root = Path(os.environ["RUNNER_TEMP"]) / "jechulok-v22"
-          assert (root / "jechulok-agent-skill-v2.2.0.zip").is_file()
-          assert (root / "jechulok-agent-skill-v2.2.0.sha256").is_file()
-          print("Portable v2.2 release built and verified")
+          root = Path(os.environ["RUNNER_TEMP"]) / "jechulok-v23"
+          assert (root / "jechulok-agent-skill-v2.3.0.zip").is_file()
+          assert (root / "jechulok-agent-skill-v2.3.0.sha256").is_file()
+          print("Portable v2.3 release built and verified")
           PY
-      - name: Upload portable v2.2 Agent Skill release candidate
+      - name: Upload portable v2.3 Agent Skill release candidate
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && always()
         uses: actions/upload-artifact@v4
         with:
-          name: jechulok-agent-skill-v2.2.0
-          path: ${{ runner.temp }}/jechulok-v22/*
+          name: jechulok-agent-skill-v2.3.0
+          path: ${{ runner.temp }}/jechulok-v23/*
           if-no-files-found: error
           retention-days: 30
       - name: Verify offline update and version consistency (all platforms)
@@ -80,9 +80,9 @@ jobs:
           assert result["current_version"] == "2.2.0"
           assert result["status"] == "offline"
           assert not result["download_performed"]
-          print("v2.2 offline update check OK")
+          print("v2.3 offline update check OK")
           PY
-      - name: Accessible v2.2 guide is read-only and never probes automatically
+      - name: Accessible v2.3 guide is read-only and never probes automatically
         working-directory: .agents/skills/jechulok-submission
         shell: bash
         run: |
@@ -101,8 +101,35 @@ jobs:
           assert not report["original_documents_read"]
           assert not report["client_config_modified"]
           assert here not in result.stdout
-          print("v2.2 accessible no-write guide OK")
+          print("v2.3 accessible no-write guide OK")
           PY
+      - name: v2.3 recovery lifecycle — 14 synthetic scenarios and real extracted MCP (Linux 3.11)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        working-directory: .agents/skills/jechulok-submission
+        shell: bash
+        run: |
+          python scripts/recovery_scenarios_v23.py --check > "$RUNNER_TEMP/jechulok-recovery-v23.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-recovery-v23.json").read_text())
+          assert report["status"] == "pass", report
+          assert report["scenario_count"] == 14
+          assert report["passed_count"] == 14
+          assert report["real_stdio_handshake_tested"]
+          assert not report["actual_user_installation_tested"]
+          assert not report["user_client_settings_changed"]
+          assert not report["user_data_processed"]
+          print("v2.3 synthetic recovery cycle passed")
+          PY
+      - name: Upload synthetic v2.3 recovery audit JSON
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-recovery-v23-synthetic-only
+          path: ${{ runner.temp }}/jechulok-recovery-v23.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Evaluate 100 synthetic guidance scenarios (Linux 3.11)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         working-directory: .agents/skills/jechulok-submission
@@ -200,17 +227,17 @@ jobs:
           python scripts/setup_mcp.py probe --allowed-dir "$PWD"
           python scripts/setup_mcp.py status --allowed-dir "$PWD"
           python scripts/setup_mcp.py beta-check --allowed-dir "$PWD" > "$RUNNER_TEMP/jechulok-beta-check.json"
-          python scripts/setup_mcp.py guide --allowed-dir "$PWD" --probe --format json > "$RUNNER_TEMP/jechulok-guided-v22.json"
+          python scripts/setup_mcp.py guide --allowed-dir "$PWD" --probe --format json > "$RUNNER_TEMP/jechulok-guided-v23.json"
           python - <<'PY'
           import json, os
           from pathlib import Path
-          data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-guided-v22.json").read_text())
+          data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-guided-v23.json").read_text())
           assert data["status"] == "ready_for_client_config", data
           assert data["stage"] == 4
           assert data["network_used"] is False
           assert data["automatic_repair"] is False
           assert data["mcp_host_registration_verified"] is False
-          print("v2.2 live local MCP onboarding guide OK")
+          print("v2.3 live local MCP onboarding guide OK")
           PY
           python - <<'PY'
           import json, os
@@ -222,7 +249,7 @@ jobs:
           assert data["network_used"] is False
           assert data["documents_read"] is False
           assert data["client_configuration_changed"] is False
-          print("v2.2 privacy-safe beta check OK")
+          print("v2.3 privacy-safe beta check OK")
           PY
           python scripts/setup_mcp.py config --client codex --allowed-dir "$PWD" > "$RUNNER_TEMP/jechulok-codex.toml"
           python - <<'PY'
