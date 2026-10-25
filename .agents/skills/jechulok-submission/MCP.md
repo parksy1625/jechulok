@@ -1,4 +1,4 @@
-# 제출OK MCP v2.2 — local stdio server
+# 제출OK MCP v2.3 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -844,3 +844,22 @@ installer, only obtaining a trusted replacement in a NEW folder.
 MCP stdio probing happens only with explicit `--probe`. A successful
 probe merely shows the next copy-only config command, not proof an IDE
 has loaded it. The guide has no network access or write behavior.
+
+
+## v2.3 — Local recovery preflight and full synthetic scenario audit
+
+The **20 MCP tools remain unchanged**. The new CLI
+`setup_mcp.py recovery-plan --allowed-dir ... --archive ... --destination ...`
+checks the existing installation's source integrity and a trusted,
+local portable ZIP/new destination, without writing files or editing
+Codex/Cursor/Claude Desktop settings. A valid SHA-256 proves internal
+consistency, NOT publisher identity. On corruption, do not execute
+scripts in the compromised copy; use a different trusted installation
+for recovery.
+
+`scripts/recovery_scenarios_v23.py --check` is a 14-case synthetic
+test of preview/extraction, deliberate source damage, safe blocking,
+new independent install and manual configuration generation plus a real
+extracted MCP stdio handshake. Its JSON is public-safe aggregate output
+and cannot prove actual user installation, real external acceptance or
+a security audit. See RELEASE_NOTES_v23.md.
