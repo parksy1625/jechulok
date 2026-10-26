@@ -5,10 +5,31 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.6.0"
+  version: "2.7.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.7 — More conservative local insights (recommended)
+
+The new **read-only** `scripts/feedback_insights_v27.py` operates on the
+original user-selected v2.5 categorical feedback folders. `prioritize`
+requires at least 20 entries; `compare` requires at least 30 **per**
+folder and the explicit flag `--conditions-comparable`. Either analysis
+withholds all issue details if **any** nonempty issue has fewer than five
+responses. The v2.6 script remains for compatibility, but new workflows
+should use v2.7's stricter disclosure and explicit comparison gate.
+
+The comparison flag only records the operator's intent: it does not
+verify participant independence, matching survey/recruitment conditions,
+product version membership, representativeness or a causal improvement.
+Without the flag no feedback records are even read for comparison.
+The original v2.5 summary now opens regular files without following
+symlinks on platforms with `O_NOFOLLOW`, reducing symlink-race risk.
+
+No new MCP permissions or tools, automated telemetry or document access.
+See RELEASE_NOTES_v27.md for examples; synthetic-only tests make no
+claims about observed human behavior.
 
 ## v2.6 — Voluntary categorical feedback insights, locally only
 

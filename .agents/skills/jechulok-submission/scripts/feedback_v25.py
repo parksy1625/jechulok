@@ -107,10 +107,21 @@ def summary(directory: Path) -> dict[str, Any]:
     issues: Counter[str] = Counter()
     impacts: Counter[str] = Counter()
     for file in candidates:
-        if file.is_symlink() or not file.is_file() or file.stat().st_size > MAX_FILE_BYTES:
+        if file.is_symlink():
             raise ValueError("Invalid feedback entry in selected directory")
         try:
-            item = check_record(json.loads(file.read_text(encoding="utf-8")))
+            # Opening with O_NOFOLLOW prevents a symlink swap between the
+            # path check above and the actual read on POSIX systems.
+            flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+            descriptor = os.open(file, flags)
+            with os.fdopen(descriptor, "rb") as stream:
+                metadata = os.fstat(stream.fileno())
+                if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > MAX_FILE_BYTES:
+                    raise ValueError("Invalid feedback entry in selected directory")
+                data = stream.read(MAX_FILE_BYTES + 1)
+            if len(data) > MAX_FILE_BYTES:
+                raise ValueError("Invalid feedback entry in selected directory")
+            item = check_record(json.loads(data.decode("utf-8")))
         except (ValueError, OSError, UnicodeError, TypeError, json.JSONDecodeError):
             raise ValueError("Invalid feedback entry in selected directory") from None
         stages[item["stage"]] += 1

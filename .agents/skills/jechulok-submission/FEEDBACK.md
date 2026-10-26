@@ -100,3 +100,24 @@ Original records contain no real app version or human participant IDs,
 so 'baseline' and 'current' are caller descriptions, not verifiable
 cohorts. Treat comparisons as descriptive only, never demonstrated
 causal changes in product quality. See RELEASE_NOTES_v26.md.
+
+## v2.7 — More conservative private feedback analysis
+
+For new analysis prefer `feedback_insights_v27.py`. It requires 20 records
+for priorities, 30 per cohort for comparisons, and withholds **all**
+issue details if any nonempty issue category has fewer than five records.
+Both tools remain entirely local and read-only.
+
+    python scripts/feedback_insights_v27.py prioritize \
+      --directory YOUR_EXISTING_FEEDBACK_FOLDER
+
+    python scripts/feedback_insights_v27.py compare \
+      --baseline-directory YOUR_BASELINE_FOLDER \
+      --current-directory YOUR_CURRENT_FOLDER \
+      --conditions-comparable
+
+Without that comparison option, no records are read. Its presence only
+records user intent, not validated matching of respondents, recruitment
+or versions. Percentages are *descriptive reports from volunteers only*;
+they do not prove representative satisfaction, significance, or causal
+quality improvement. Carefully review any output before sharing it.
