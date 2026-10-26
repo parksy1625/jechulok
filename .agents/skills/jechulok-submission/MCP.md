@@ -1,4 +1,4 @@
-# 제출OK MCP v2.5 — local stdio server
+# 제출OK MCP v2.6 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -900,3 +900,23 @@ an explicit feedback folder for saving. Aggregate category results are
 redacted for fewer than five entries or categories under three.
 No actual feedback has been collected in CI; only 31 synthetic checks
 exercise the implementation. See FEEDBACK.md for exact commands.
+
+## v2.6 — Explicit, read-only local feedback insights
+
+All existing 20 stdio MCP tools remain unchanged. The standalone
+`scripts/feedback_insights_v26.py` reads only user-selected local v2.5
+feedback folders and never reads source documents. `prioritize` returns
+ranked issue frequencies and static follow-up test suggestions only when
+the cohort contains at least 20 entries and every nonzero issue count is
+at least five. Otherwise it suppresses the entire issue ranking.
+
+`compare` requires two distinct, manually separated existing directories,
+at least 30 records in **each** and the same privacy cell threshold. Without
+`--conditions-comparable`, it returns no per-category differences; even
+with this explicit flag, the matching sampling conditions are not verified.
+It never calls an effect a statistically significant or causal quality
+improvement. No telemetry, storage, automated updates, client changes,
+privileged operations or extra MCP commands are introduced.
+
+See FEEDBACK.md, RELEASE_NOTES_v26.md and the synthetic-only
+`scripts/feedback_audit_v26.py --check` audit.

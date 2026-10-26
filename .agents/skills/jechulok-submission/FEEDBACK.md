@@ -1,4 +1,4 @@
-# JeChulOK v2.5 — Private, opt-in feedback
+# JeChulOK v2.6 — Private opt-in feedback and offline insights
 
 The new offline feedback tool is deliberately **not telemetry**.
 It does not monitor MCP sessions, infer user behavior, or send feedback to
@@ -78,3 +78,41 @@ controlling for who responded and how the questions were asked.
 The v2.5 synthetic suite contains 30 generated responses plus one
 aggregate safety check. No real user responded; its pass rate is only
 a software-regression result, not measured user satisfaction.
+
+## v2.6 — Rank issues and compare voluntary report cohorts locally
+
+The separate, read-only v2.6 command accepts **only** the original local
+four-field `.feedback-v25.json` records, with no new identifiers. It never
+creates files, queries web services, reads submitted documents, or uploads
+feedback. Run these commands from the skill directory:
+
+    python scripts/feedback_insights_v26.py prioritize \
+      --directory YOUR_EXISTING_FEEDBACK_FOLDER
+
+The ranking is deliberately withheld below 20 records or if **any**
+nonempty issue category has fewer than five records. When permitted, rank
+reflects only the frequency of self-selected reports, not population
+prevalence or how seriously people were affected. Suggestions are static
+follow-up experiments, not automatic changes to the product.
+
+For a descriptive side-by-side view, the user must manually keep records
+for different versions in **two existing, disjoint folders**. The records
+have no version or participant identifiers, so directory assignment and
+repeat participation cannot be verified. First review the questionnaire,
+participant recruiting, time window, and support-channel changes. Only if
+you judge the conditions comparable, explicitly opt in:
+
+    python scripts/feedback_insights_v26.py compare \
+      --baseline-dir YOUR_OLD_VERSION_FEEDBACK_FOLDER \
+      --candidate-dir YOUR_NEW_VERSION_FEEDBACK_FOLDER \
+      --conditions-comparable
+
+Without the last flag, the command returns no differences. With it, both
+folders must contain at least 30 records and every nonzero issue count must
+be at least five; otherwise all differences are hidden. The returned shares
+and percentage-point differences describe only **voluntarily submitted**
+records. They cannot establish independent users, statistical significance,
+product causality, or representative satisfaction. Repeated queries across
+different groups can reveal private information: never publish these
+outputs without separate review and consent. Public CI uses synthetic
+records exclusively (`python scripts/feedback_audit_v26.py --check`).

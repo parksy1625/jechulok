@@ -5,10 +5,35 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.5.0"
+  version: "2.6.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.6 — Offline feedback priorities and descriptive version comparison
+
+`scripts/feedback_insights_v26.py` reads only explicitly selected folders
+containing the existing four-field v2.5 opt-in feedback schema. The
+`prioritize` command ranks recurring issue types by **share of volunteered
+reports** and suggests a fixed follow-up usability experiment. Ranking is
+suppressed below 20 records or whenever a nonzero issue category has fewer
+than five records. Neither counts nor ranks estimate actual user prevalence,
+distinct users, severity, impact, or satisfaction.
+
+`compare` takes **two separate, manually labeled folders**, requires at least
+30 records per cohort and the same five-per-nonzero-category guard. It will
+not show differences unless the user explicitly passes
+`--conditions-comparable` after reviewing the recruitment and questionnaire
+conditions. The flag is an unverified human attestation, NOT proof of matched
+samples: results remain descriptive, never a claim of statistical or causal
+improvement. The tool does not store version data in feedback records.
+
+Both commands are read-only, require explicit paths, omit paths and source
+content from output, and have no network functions. No user feedback or
+documents are checked into CI; only synthesized scenarios are evaluated.
+All 20 MCP tools and exact-plan approval gates remain unchanged.
+
+See FEEDBACK.md and RELEASE_NOTES_v26.md for examples and limitations.
 
 ## v2.5 — Human-initiated, categorical, local-only feedback
 

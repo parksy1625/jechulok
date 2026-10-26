@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v2.5 빠른 시작
+# 제출OK Agent Skill + MCP v2.6 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -475,3 +475,34 @@ python scripts/feedback_v25.py summary \
 전체 스키마·한계는 `FEEDBACK.md`를 참조하세요.
 테스트는 `python scripts/feedback_audit_v25.py --check`로
 실행하며, **31개 합성 조건**으로 실제 만족도를 대신할 수 없습니다.
+
+## 19. 로컬 피드백 우선순위·버전 비교 (선택 사항, v2.6)
+
+v2.5에서 사용자가 별도로 저장한 범주형 피드백만 읽는 **읽기 전용
+분석**입니다. 아래 폴더는 이미 존재해야 하고 기록은 자동 수집하지 않습니다.
+
+```bash
+python scripts/feedback_insights_v26.py prioritize \
+  --directory "/EXISTING/PRIVATE/FEEDBACK/FOLDER"
+```
+
+전체 20건 미만이거나 문제 유형 중 1~4건짜리 범주가 하나라도
+있으면 우선순위를 전부 숨깁니다. 결과 순서는 **자발적인 제보 빈도**일 뿐
+전체 이용자의 문제 발생률이나 불편의 심각도가 아닙니다.
+
+버전별로 사용자가 직접 구분해둔 두 로컬 폴더의 비교는 아래처럼
+별도로 요청해야 합니다. 설문 문항·모집 방식·기간·지원 방식이
+비슷했는지 사람이 검토한 뒤에만 마지막 옵션을 넣으세요.
+
+```bash
+python scripts/feedback_insights_v26.py compare \
+  --baseline-dir "/EXISTING/BASELINE/FOLDER" \
+  --candidate-dir "/EXISTING/CANDIDATE/FOLDER" \
+  --conditions-comparable
+```
+
+각각 최소 30건, 각 범주 최소 5건 조건을 충족해야 기술적 비교
+결과를 보여줍니다. 동일 조건·독립 사용자 여부는 확인할 수 없으므로
+버전 품질이 개선됐다고 자동 결론 내리지 않습니다. 웹 전송·자동
+저장·MCP 도구 추가는 없습니다. 자세한 사항은 `FEEDBACK.md`를
+보세요. 합성 테스트: `python scripts/feedback_audit_v26.py --check`.
