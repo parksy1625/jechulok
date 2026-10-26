@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v2.6 빠른 시작
+# 제출OK Agent Skill + MCP v2.7 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -504,3 +504,30 @@ python scripts/feedback_insights_v26.py compare \
 이 테스트는 합성 데이터만 생성하고 외부 전송은 하지 않습니다.
 자세한 통계 해석과 개인정보 취급은 `RELEASE_NOTES_v26.md`를
 참고하세요.
+
+## 20. 강화된 피드백 분석 및 비교 동의 (v2.7 권장)
+
+기존 v2.5 범주형 피드백을 로컬에서 읽기만 합니다.
+우선순위는 전체 최소 20건, 비교는 각 폴더 최소 30건이 필요하며
+어느 문제 유형에든 1~4건이 있으면 결과를 전부 숨깁니다.
+
+```bash
+python scripts/feedback_insights_v27.py prioritize \
+  --directory "/EXISTING/LOCAL/FEEDBACK/FOLDER"
+```
+
+버전별 피드백 폴더를 사람이 구분해둔 경우에만 다음을 사용하세요.
+질문 문구, 모집 방식과 기간 등이 비교 가능한지 먼저 검토해야 합니다.
+
+```bash
+python scripts/feedback_insights_v27.py compare \
+  --baseline-directory "/EXISTING/BASELINE/FOLDER" \
+  --current-directory "/EXISTING/CURRENT/FOLDER" \
+  --conditions-comparable
+```
+
+마지막 옵션이 없으면 기록을 읽지 않고 비교를 보류합니다. 옵션이
+있어도 조건이 실제로 동일했는지 확인하거나 인과관계를 증명하지는
+못합니다. 온라인 전송·자동 저장·MCP 도구 추가는 없습니다.
+
+합성 회귀 테스트: `python scripts/feedback_insights_audit_v27.py --check`.

@@ -1,0 +1,45 @@
+name: JeChulOK v2.7 Private Insights Audit
+on:
+  push:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/feedback-insights-v27-ci.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/feedback-insights-v27-ci.yml'
+permissions:
+  contents: read
+jobs:
+  private-feedback-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check six synthetic privacy and comparison scenarios
+        working-directory: .agents/skills/jechulok-submission
+        run: python scripts/feedback_insights_audit_v27.py --check > insights-v27.json
+      - name: Verify synthetic report does not claim a human study
+        working-directory: .agents/skills/jechulok-submission
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("insights-v27.json").read_text())
+          assert data["status"] == "pass"
+          assert data["scenario_count"] == data["passed_cases"] == 6
+          assert data["human_testers"] == 0
+          assert not data["actual_feedback_collected"]
+          assert not data["causal_improvement_measured"]
+          assert not data["network_used"]
+          assert not data["user_files_modified"]
+          PY
+      - name: Upload synthetic-only privacy audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-v27-feedback-insights-synthetic
+          path: .agents/skills/jechulok-submission/insights-v27.json
+          if-no-files-found: error
+          retention-days: 30

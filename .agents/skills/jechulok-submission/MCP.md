@@ -1,4 +1,4 @@
-# 제출OK MCP v2.6 — local stdio server
+# 제출OK MCP v2.7 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -919,3 +919,17 @@ is shown. Raw data never leaves the computer and sharing output
 requires separate privacy review. A 20-condition *synthetic* audit
 is included; no actual user study has occurred. Details in
 RELEASE_NOTES_v26.md.
+
+## v2.7 — Stronger optional offline feedback disclosure gate
+
+The recommended standalone `scripts/feedback_insights_v27.py` requires
+20 locally selected records for ranking, and 30 per cohort for comparison.
+Every nonzero issue category must contain at least five reports.
+Comparison is additionally blocked until the user explicitly supplies
+`--conditions-comparable`; this flag does not prove that recruitment,
+question wording, participants, or version assignment are comparable.
+
+The older v2.6 CLI remains for compatibility. The new tool does not add
+MCP methods, network access, document reads, storage, upload functions,
+automation or changes to the exact-plan approval boundary. Synthetic
+tests and the limitations are documented in RELEASE_NOTES_v27.md.
