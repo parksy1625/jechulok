@@ -5,10 +5,35 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.5.0"
+  version: "2.6.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.6 — Voluntary categorical feedback insights, locally only
+
+`scripts/feedback_insights_v26.py` implements read-only `prioritize`
+and `compare` over **explicit user-selected local v2.5 feedback
+folders**. Its ranking is category frequency among opt-in responses,
+not a severity score. The comparison reports descriptive per-cohort
+proportions but does not claim measured product improvement or causality.
+
+The analyzer **reuses v2.5 privacy suppression**, and additionally
+requires at least 10 records in each relevant cohort. Sparse issue
+categories cause that entire ranking/comparison to be withheld.
+No raw feedback records, paths, names, contents, notices, file inputs
+or user-level activity are included in result JSON. No network use,
+auto-sharing, writes or client instrumentation.
+
+Because entries contain no timestamps, human identity or real
+product-version attribution, duplicates/independent cohorts cannot
+be verified. Results are strictly self-selected descriptive evidence
+to guide *future independent human testing*, not a real-user quality
+measurement. CI runs 20 synthetic checks from
+`scripts/feedback_insights_audit_v26.py --check` plus unit tests.
+The existing **20 MCP tools** and separate file-execution approval
+rules remain unchanged. See RELEASE_NOTES_v26.md and FEEDBACK.md.
+
 
 ## v2.5 — Human-initiated, categorical, local-only feedback
 
