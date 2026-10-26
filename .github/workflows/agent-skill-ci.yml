@@ -41,28 +41,28 @@ jobs:
       - name: Run CLI + MCP + end-to-end release tests
         working-directory: .agents/skills/jechulok-submission
         run: python -m unittest discover -s tests -v
-      - name: Build and verify v2.5 portable Agent Skill ZIP (Linux 3.11)
+      - name: Build and verify v2.6 portable Agent Skill ZIP (Linux 3.11)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         working-directory: .agents/skills/jechulok-submission
         shell: bash
         run: |
-          mkdir -p "$RUNNER_TEMP/jechulok-v25"
-          python scripts/release_v20.py build --output-dir "$RUNNER_TEMP/jechulok-v25"
-          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-v25/jechulok-agent-skill-v2.5.0.zip"
+          mkdir -p "$RUNNER_TEMP/jechulok-v26"
+          python scripts/release_v20.py build --output-dir "$RUNNER_TEMP/jechulok-v26"
+          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-v26/jechulok-agent-skill-v2.6.0.zip"
           python - <<'PY'
           import os
           from pathlib import Path
-          root = Path(os.environ["RUNNER_TEMP"]) / "jechulok-v25"
-          assert (root / "jechulok-agent-skill-v2.5.0.zip").is_file()
-          assert (root / "jechulok-agent-skill-v2.5.0.sha256").is_file()
+          root = Path(os.environ["RUNNER_TEMP"]) / "jechulok-v26"
+          assert (root / "jechulok-agent-skill-v2.6.0.zip").is_file()
+          assert (root / "jechulok-agent-skill-v2.6.0.sha256").is_file()
           print("Portable v2.5 release built and verified")
           PY
       - name: Upload portable v2.5 Agent Skill release candidate
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && always()
         uses: actions/upload-artifact@v4
         with:
-          name: jechulok-agent-skill-v2.5.0
-          path: ${{ runner.temp }}/jechulok-v25/*
+          name: jechulok-agent-skill-v2.6.0
+          path: ${{ runner.temp }}/jechulok-v26/*
           if-no-files-found: error
           retention-days: 30
       - name: Verify offline update and version consistency (all platforms)
