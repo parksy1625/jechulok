@@ -1,4 +1,4 @@
-# 제출OK MCP v2.7 — local stdio server
+# 제출OK MCP v2.8 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -933,3 +933,18 @@ The older v2.6 CLI remains for compatibility. The new tool does not add
 MCP methods, network access, document reads, storage, upload functions,
 automation or changes to the exact-plan approval boundary. Synthetic
 tests and the limitations are documented in RELEASE_NOTES_v27.md.
+
+## v2.8 — Opt-in beta-study readiness without participant collection
+
+The new separate CLI `scripts/beta_protocol_v28.py` offers read-only
+`protocol`, `template`, `audit`, and `compare-preflight` commands.
+It uses fixed, invented tasks and strict categorical/boolean JSON
+checklists to help an operator prepare voluntary human usability testing.
+No users are contacted and no consent is recorded or verified by the tool.
+
+Results distinguish self-attestation from independently observed facts.
+They never claim distinct participants, representative sampling,
+causality, or completed beta sessions. The 20 local stdio MCP tools,
+exact-plan approvals, allowed-folder rules and file processing remain
+unchanged. See BETA_GUIDE.md and RELEASE_NOTES_v28.md for commands and
+limits. Public CI runs synthetic checks only.

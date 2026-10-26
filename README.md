@@ -2,9 +2,23 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v2.7.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v2.8.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v2.8: 실제 베타 검증을 위한 자발적 참여 프로토콜 준비
+
+실제 이용자 테스트를 진행할 때 사용할 **고정 과제·동의 안내·사전점검**
+도구를 만들었어. 도구가 참가자를 모집하거나 기록을 수집하는 것은 아니야.
+
+- 한국어·영어 고정 연습 과제 5개와 참여·철회 안내 미리보기
+- 처음에는 전부 체크 해제된 사전점검 JSON 템플릿
+- 직접 제공한 로컬 JSON의 동의 절차·가상 파일·개인정보 배제 체크
+- 두 집단의 질문·모집 방식이 같은지 점검하되 실제 동일성 입증은 하지 않음
+- 신규 단위 테스트 19개 및 **합성 6개 시나리오**, 인터넷 전송 없음
+
+**[베타 프로토콜 사용법](.agents/skills/jechulok-submission/BETA_GUIDE.md)** /
+**[v2.8 릴리스 노트](.agents/skills/jechulok-submission/RELEASE_NOTES_v28.md)**
 
 ### v2.7: 피드백 분석의 개인정보 보호·버전 비교 조건 강화
 
@@ -418,7 +432,7 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v2.7 — AI가 직접 호출하는 로컬 도구
+## MCP v2.8 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`, `assist_submission` 등의 20개 도구를
@@ -430,7 +444,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v2.7 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v2.8 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의

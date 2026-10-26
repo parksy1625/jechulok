@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v2.7 빠른 시작
+# 제출OK Agent Skill + MCP v2.8 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -531,3 +531,31 @@ python scripts/feedback_insights_v27.py compare \
 못합니다. 온라인 전송·자동 저장·MCP 도구 추가는 없습니다.
 
 합성 회귀 테스트: `python scripts/feedback_insights_audit_v27.py --check`.
+
+## 21. 자발적 베타 평가 사전 준비 (v2.8)
+
+기존 MCP 도구를 활용한 **연습용 5개 과제**와 참여·철회 안내를 먼저
+확인하세요. 실제 사용자에게 메시지를 보내거나 결과를 저장하지 않습니다.
+
+```bash
+python scripts/beta_protocol_v28.py protocol --language ko
+```
+
+사전점검 양식은 항목이 모두 체크 해제된 상태로 출력됩니다.
+실제 베타 진행자는 내용을 검토하고 별도로 로컬 `.json` 파일을
+작성해야 합니다. 이름·연락처·개인 공고·자유 형식 의견을 넣지 마세요.
+
+```bash
+python scripts/beta_protocol_v28.py template --cohort baseline
+python scripts/beta_protocol_v28.py audit --manifest LOCAL_BASELINE.json
+python scripts/beta_protocol_v28.py compare-preflight \
+  --baseline-manifest LOCAL_BASELINE.json \
+  --current-manifest LOCAL_CURRENT.json
+```
+
+체크가 통과해도 진짜 동의 여부, 사용자 독립성, 표본 대표성 또는
+제품 개선 효과가 검증되는 것은 아닙니다. 동의·철회 접수와 참여자
+관리는 별도의 적절한 절차가 필요합니다. 도구는 온라인 전송·자동
+수집·파일 변경을 하지 않으며, MCP 20개 도구도 그대로입니다.
+
+합성 회귀 테스트: `python scripts/beta_protocol_audit_v28.py --check`.
