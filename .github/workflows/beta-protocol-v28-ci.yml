@@ -1,0 +1,46 @@
+name: JeChulOK v2.8 Synthetic Beta Protocol Audit
+on:
+  push:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/beta-protocol-v28-ci.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/beta-protocol-v28-ci.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-beta-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check six synthetic protocol and consent-claim scenarios
+        working-directory: .agents/skills/jechulok-submission
+        run: python scripts/beta_protocol_audit_v28.py --check > beta-protocol-v28.json
+      - name: Verify report explicitly excludes real participants
+        working-directory: .agents/skills/jechulok-submission
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("beta-protocol-v28.json").read_text())
+          assert data["status"] == "pass"
+          assert data["scenario_count"] == data["passed_cases"] == 6
+          assert data["human_testers"] == 0
+          assert data["real_consent_verified"] is False
+          assert data["real_study_conducted"] is False
+          assert data["telemetry_sent"] is False
+          assert data["personal_documents_read"] is False
+          assert data["user_files_modified"] is False
+          PY
+      - name: Upload synthetic-only beta protocol regression
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-v28-beta-protocol-synthetic
+          path: .agents/skills/jechulok-submission/beta-protocol-v28.json
+          if-no-files-found: error
+          retention-days: 30

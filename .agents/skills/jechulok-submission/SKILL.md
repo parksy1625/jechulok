@@ -2,13 +2,32 @@
 name: jechulok-submission
 description: Parse Korean technical submission criteria, prepare JPG images or selected PDF pages on local disk, and recheck output requirements. Use when users ask to resize a photo to exact pixels, limit a JPG file to a KB threshold, inspect image/PDF format and dimensions/pages, or prepare a locally verifiable submission file. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
 license: MIT
-compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.7.0"
+  version: "2.8.0"
+  compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.8 — Prepare an opt-in beta study without collecting participants
+
+Use `scripts/beta_protocol_v28.py protocol` to preview five fixed
+synthetic-document tasks and voluntary participation/withdrawal notice
+in Korean (or `--language en`). `template` prints a **default-unchecked**
+preflight manifest for two possible manually organized study cohorts.
+The optional `audit --manifest ...` and `compare-preflight` operations
+read only explicitly provided, bounded, canonical JSON checklist files.
+They reject unknown fields, free text, duplicated keys, links and
+personal identifiers; they do not create records or contact testers.
+
+Completed flags are **unverified operator attestations**, not proof of
+real consent, representative recruitment, independent participants, study
+execution or product improvement. Do not store personal documents or
+observations in these JSON manifests. Existing v2.5 feedback remains
+separate and user-initiated. For usage and limitations, read BETA_GUIDE.md
+and RELEASE_NOTES_v28.md. The 20 existing MCP tools and explicit execution
+approvals are unchanged.
 
 ## v2.7 — More conservative local insights (recommended)
 
