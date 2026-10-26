@@ -5,10 +5,36 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.3.0"
+  version: "2.4.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.4 — First-run guided UX state (no new permissions)
+
+The existing `assist_submission` MCP tool adds a path-free **experience**
+result with current stage (of 5), next human action, curated next-step help,
+unselected input count, safe item IDs/formats, unresolved notice/plan issue
+count, and whether a separate exact-plan approval is required.
+
+The original workflow response with full reviewable paths is preserved;
+the new `experience` card omits notice text, file paths and telemetry.
+Its progress percentage is **only a step indicator**, NOT preparation
+completion, upload status or institutional acceptance. Filename hints
+never auto-select files; opening a preview never grants consent.
+
+Run `python scripts/first_run_audit_v24.py --check` for a deterministic
+**24-case synthetic** UX audit (6 invented two-document notices × 4 states).
+It checks group file requests, errors, safe approval prompting, progress,
+no side effects and absence of private paths in the new summary.
+Reported question-count savings are against a **hypothetical**
+one-prompt-per-file comparator, NOT measured real-world improvements.
+No users were recruited, surveyed or tracked by this release.
+
+See RELEASE_NOTES_v24.md. All 20 MCP tools, consent gates, local file
+restrictions and existing v2.3 recovery checks remain unchanged.
+
+
 
 ## v2.3 — Explicit, read-only recovery plan and 14 synthetic lifecycle regressions
 
