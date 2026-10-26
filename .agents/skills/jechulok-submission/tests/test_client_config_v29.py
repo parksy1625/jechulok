@@ -75,7 +75,14 @@ class ClientConfigV29Tests(unittest.TestCase):
     def test_wrong_command_needs_explicit_user_review(self):
         for client in setup_mcp.CLIENTS:
             path = self.config(client)
-            path.write_text(path.read_text().replace(str(self.interpreter), "python"))
+            if client == "codex":
+                # TOML uses JSON-compatible escaped Windows path literals.
+                path.write_text(path.read_text().replace(
+                    json.dumps(str(self.interpreter)), json.dumps("python")))
+            else:
+                parsed = json.loads(path.read_text())
+                parsed["mcpServers"]["jechulok"]["command"] = "python"
+                path.write_text(json.dumps(parsed))
             result = self.check(client, path)
             self.assertEqual(result["reason_code"], "command_mismatch")
             self.assertEqual(result["status"], "needs_attention")
@@ -89,9 +96,12 @@ class ClientConfigV29Tests(unittest.TestCase):
         self.assertEqual(self.check("cursor", path)["reason_code"], "args_mismatch")
 
     def test_wrong_allowed_folder(self):
-        path = self.config("codex")
-        path.write_text(path.read_text().replace(str(self.work), "other_path"))
-        result = self.check("codex", path)
+        path = self.config("cursor")
+        parsed = json.loads(path.read_text())
+        parsed["mcpServers"]["jechulok"]["command"] = "python"
+        parsed["mcpServers"]["jechulok"]["env"]["JECHULOK_ALLOWED_DIRS"] = "other_path"
+        path.write_text(json.dumps(parsed))
+        result = self.check("cursor", path)
         self.assertEqual(result["reason_code"], "command_mismatch")
         self.assertFalse(result["checks"]["allowed_directory_matches"])
 
