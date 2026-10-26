@@ -4,11 +4,26 @@ description: Parse Korean technical submission criteria, prepare JPG images or s
 license: MIT
 metadata:
   author: jechulok
-  version: "3.0.0"
+  version: "3.1.0"
   compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v3.1 — Rehearse with invented JPG/PDF files (explicit opt-in)
+
+For a new user who wants to verify local processing **without opening their
+documents**, offer `python scripts/offline_demo_v31.py` first. The default
+prints a no-write preview; run `python scripts/offline_demo_v31.py --run`
+**only when explicitly requested**. The `--run` path creates an invented
+illustration and three blank PDF pages in an isolated temporary directory,
+uses the production JPG and PDF conversion/checking functions, and removes
+all temporary outputs before returning a fixed, path-free six-stage report.
+`--format json` and `--language en` are available. This script never asks
+for user file paths, an MCP allowed directory, client config, network access
+or upload permission. A passing synthetic test **does not** verify real
+documents, installed host registration, portrait requirements, electronic
+signatures or institutional acceptance. See RELEASE_NOTES_v31.md.
 
 ## v3.0 — Use one first-run checkup (recommended for new installations)
 
