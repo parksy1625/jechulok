@@ -48,7 +48,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/jechulok-v24"
           python scripts/release_v20.py build --output-dir "$RUNNER_TEMP/jechulok-v24"
-          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-v23/jechulok-agent-skill-v2.4.0.zip"
+          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-v24/jechulok-agent-skill-v2.4.0.zip"
           python - <<'PY'
           import os
           from pathlib import Path
