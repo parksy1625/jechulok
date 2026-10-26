@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v2.4 빠른 시작
+# 제출OK Agent Skill + MCP v2.5 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -439,3 +439,39 @@ python scripts/first_run_audit_v24.py --check
 
 서로 다른 합성 공고 6건의 상태 24개를 검사합니다.
 보고서의 가상 질문 절감 수치는 실제 사용자 테스트가 아닙니다.
+
+
+## 18. 사용 경험 피드백 남기기 (선택 사항, v2.5)
+
+사용자가 직접 요청한 경우에만 로컬 컴퓨터에 저장합니다.
+기본적으로 개인정보, 공고 원문, 사용 파일 경로,
+자유로운 설명 및 접속 정보는 기록하지 않습니다.
+
+```bash
+python scripts/feedback_v25.py preview --stage files \
+  --issue file_selection_confusing --impact minor
+```
+
+`preview`는 읽기 전용입니다. 아래처럼 사용자가 선택한 **기존
+로컬 폴더**에만 별도 `save` 명령으로 저장할 수 있습니다.
+
+```bash
+python scripts/feedback_v25.py save --stage files \
+  --issue file_selection_confusing --impact minor \
+  --output-dir "/EXISTING/PRIVATE/FEEDBACK/FOLDER"
+```
+
+```bash
+python scripts/feedback_v25.py summary \
+  --directory "/EXISTING/PRIVATE/FEEDBACK/FOLDER"
+```
+
+5건 미만일 때는 범주별 통계를 표시하지 않고, 작은 범주가
+남아 있어도 추가로 숨깁니다. 어떤 출력도 **자동으로 온라인
+공유되지 않습니다.** 필요한 경우 사용자가 집계 결과만 검토하여
+별도 동의를 받아 공유하세요. 기록 철회는 로컬 파일을 직접
+삭제하면 됩니다.
+
+전체 스키마·한계는 `FEEDBACK.md`를 참조하세요.
+테스트는 `python scripts/feedback_audit_v25.py --check`로
+실행하며, **31개 합성 조건**으로 실제 만족도를 대신할 수 없습니다.
