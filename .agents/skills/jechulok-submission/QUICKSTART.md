@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v2.5 빠른 시작
+# 제출OK Agent Skill + MCP v2.6 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -475,3 +475,32 @@ python scripts/feedback_v25.py summary \
 전체 스키마·한계는 `FEEDBACK.md`를 참조하세요.
 테스트는 `python scripts/feedback_audit_v25.py --check`로
 실행하며, **31개 합성 조건**으로 실제 만족도를 대신할 수 없습니다.
+
+
+## 19. 피드백 기반 개선 우선순위 확인 (v2.6)
+
+실제 사용자 동의로 직접 수집한 로컬 범주형 피드백이 있을
+경우에만 분석할 수 있습니다. 테스트를 위해서는 합성 데이터만
+사용하세요.
+
+```bash
+python scripts/feedback_insights_v26.py prioritize \
+  --directory "/LOCAL/FEEDBACK/BASELINE"
+```
+
+```bash
+python scripts/feedback_insights_v26.py compare \
+  --baseline-directory "/LOCAL/FEEDBACK/BASELINE" \
+  --current-directory "/LOCAL/FEEDBACK/CURRENT"
+```
+
+각 폴더에는 최소 10개 응답이 필요하며, 소수 의견이 노출될
+우려가 있으면 전체 해당 문제 유형 분석을 숨깁니다.
+빈도별 정렬이 곧 영향도·개선 우선순위의 객관적인 정답은
+아니며, 집단 비교만으로 새 버전의 효과를 증명할 수 없습니다.
+
+테스트 명령:
+`python scripts/feedback_insights_audit_v26.py --check`.
+이 테스트는 합성 데이터만 생성하고 외부 전송은 하지 않습니다.
+자세한 통계 해석과 개인정보 취급은 `RELEASE_NOTES_v26.md`를
+참고하세요.
