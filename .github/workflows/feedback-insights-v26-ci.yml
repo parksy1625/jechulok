@@ -1,0 +1,23 @@
+name: JeChulOK v2.6 Insights Audit
+on:
+  push:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/feedback-insights-v26-ci.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/feedback-insights-v26-ci.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-feedback-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check opt-in feedback priority and cohort comparisons
+        working-directory: .agents/skills/jechulok-submission
+        run: python scripts/feedback_insights_audit_v26.py --check
