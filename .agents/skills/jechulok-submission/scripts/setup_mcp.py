@@ -20,6 +20,7 @@ from version_check_v21 import check_latest
 from onboarding_v22 import guide as build_guide, render_text
 from recovery_plan_v23 import plan_recovery
 from client_config_audit_v29 import audit_client_config
+from first_run_checkup_v30 import checkup as build_checkup, render_text as render_checkup
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SERVER_SCRIPT = SKILL_ROOT / "scripts" / "mcp_server.py"
@@ -265,15 +266,22 @@ def build_parser() -> argparse.ArgumentParser:
         description="JeChulOK local-only MCP setup. Never changes client settings."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("install", "doctor", "config", "config-check", "probe", "status", "upgrade", "updates", "beta-check", "guide", "recovery-plan"):
+    for command in ("install", "doctor", "config", "config-check", "checkup", "probe", "status", "upgrade", "updates", "beta-check", "guide", "recovery-plan"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--allowed-dir", required=True,
                          help="Existing canonical local directory containing your submission files")
-        if command in {"config", "config-check", "guide"}:
+        if command in {"config", "config-check", "checkup", "guide"}:
             cmd.add_argument("--client", choices=CLIENTS, default="codex")
         if command == "config-check":
             cmd.add_argument("--config-file", type=Path, required=True,
                              help="Explicit local MCP client configuration file; read-only (may contain secrets)")
+        if command == "checkup":
+            cmd.add_argument("--language", choices=("ko", "en"), default="ko")
+            cmd.add_argument("--format", choices=("text", "json"), default="text")
+            cmd.add_argument("--probe", action="store_true",
+                             help="Explicit consent to test local stdio MCP in a child process")
+            cmd.add_argument("--config-file", type=Path,
+                             help="Opt-in: read only this explicit MCP client TOML/JSON file")
         if command == "guide":
             cmd.add_argument("--language", choices=("ko", "en"), default="ko",
                              help="Plain-language Korean/English instructions")
@@ -303,6 +311,32 @@ def main(argv: list[str] | None = None) -> int:
             result = plan_recovery(args.archive, args.destination, installed_root=SKILL_ROOT)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0 if result["status"] == "planned" else 1
+        if args.command == "checkup":
+            doctor = environment_report(root, venv_python())
+            # Fail closed on damaged installation: do not run an MCP server or
+            # open potentially sensitive client configuration until doctor passes.
+            safe = doctor["status"] == "pass"
+            observed_probe = (probe_connection(root, venv_python())
+                              if safe and args.probe else None)
+            observed_config = None
+            if safe and args.config_file is not None:
+                expected = {
+                    "command": str(venv_python().absolute()),
+                    "args": [str(SERVER_SCRIPT)],
+                    "env": {"JECHULOK_ALLOWED_DIRS": str(root)},
+                }
+                observed_config = audit_client_config(args.client, args.config_file, expected)
+            result = build_checkup(
+                doctor, client=args.client, language=args.language,
+                probe_requested=args.probe, probe=observed_probe,
+                config_requested=args.config_file is not None,
+                config=observed_config,
+            )
+            print((json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+                  if args.format == "json" else render_checkup(result), end="")
+            # This is a diagnostic narrative. Use structured status, not the
+            # shell exit code, to decide whether installation is ready.
+            return 0
         if args.command == "guide":
             doctor = environment_report(root, venv_python())
             connection = (

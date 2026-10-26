@@ -1,0 +1,45 @@
+name: JeChulOK v3.0 Synthetic First-run Checkup Audit
+on:
+  push:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/first-run-v30-ci.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/first-run-v30-ci.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-first-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check six fully synthetic first-run states
+        working-directory: .agents/skills/jechulok-submission
+        run: python scripts/first_run_audit_v30.py --check > first-run-v30.json
+      - name: Verify synthetic status is not host proof
+        working-directory: .agents/skills/jechulok-submission
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('first-run-v30.json').read_text())
+          assert data['status'] == 'pass'
+          assert data['scenario_count'] == data['passed_cases'] == 6
+          assert data['real_mcp_host_launched'] is False
+          assert data['client_configuration_files_read'] == 0
+          assert data['network_used'] is False
+          assert data['telemetry_sent'] is False
+          assert data['user_files_modified'] is False
+          PY
+      - name: Upload synthetic-only first-run report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-v30-first-run-synthetic
+          path: .agents/skills/jechulok-submission/first-run-v30.json
+          if-no-files-found: error
+          retention-days: 30

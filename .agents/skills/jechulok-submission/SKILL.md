@@ -4,11 +4,25 @@ description: Parse Korean technical submission criteria, prepare JPG images or s
 license: MIT
 metadata:
   author: jechulok
-  version: "2.9.0"
+  version: "3.0.0"
   compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v3.0 — Use one first-run checkup (recommended for new installations)
+
+Run `python scripts/setup_mcp.py checkup --allowed-dir YOUR_FOLDER` first.
+This performs the existing local environment check and returns one next
+action without installing anything. Request `--probe` only with explicit
+permission to launch a local MCP stdio test. Supply `--config-file FILE`
+**only if the user explicitly authorizes reading that sensitive MCP client
+config file**. Use `--client codex|cursor|claude-desktop`, `--language ko|en`
+and `--format text|json` as needed. A corrupted installation blocks both
+optional checks; never bypass this gate. The best possible result is
+`ready_for_manual_host_check`, **not** proof the app loaded the MCP server,
+accepted a submission or validated an external organization's rules.
+See QUICKSTART.md and RELEASE_NOTES_v30.md for usage.
 
 ## v2.9 — Check actual MCP client configuration (only when explicitly requested)
 
