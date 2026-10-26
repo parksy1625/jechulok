@@ -1,4 +1,4 @@
-# 제출OK MCP v2.3 — local stdio server
+# 제출OK MCP v2.4 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -863,3 +863,24 @@ new independent install and manual configuration generation plus a real
 extracted MCP stdio handshake. Its JSON is public-safe aggregate output
 and cannot prove actual user installation, real external acceptance or
 a security audit. See RELEASE_NOTES_v23.md.
+
+## v2.4 — First-use progress response and synthetic audit
+
+The existing **20 tools remain unchanged**. Each `assist_submission`
+response now includes a top-level `experience` object describing its
+five-step position, next safe user action, outstanding source-file count,
+and, when available, how many ambiguous rules/blockers remain.
+Only safe item IDs/expected formats appear, not full user paths or
+source-derived evidence. The detailed plan is unchanged, so exact file
+paths can still be inspected when approval is required.
+
+`experience.progress_percent` denotes step position only and MUST NOT
+be interpreted as file preparation completion, institutional upload,
+or a receipt. Consent is still required through the old exact-plan
+approval gate. No uploads, telemetry, auto-assignments or new writes.
+
+The reproducible `scripts/first_run_audit_v24.py --check` reports 24
+synthetic workflow states and 6 grouped source-selection prompts.
+The comparison with one individual prompt per missing file is
+**counterfactual**, not observed user interaction. See
+RELEASE_NOTES_v24.md for the audit's boundaries.
