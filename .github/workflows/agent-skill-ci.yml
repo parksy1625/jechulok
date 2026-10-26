@@ -41,28 +41,28 @@ jobs:
       - name: Run CLI + MCP + end-to-end release tests
         working-directory: .agents/skills/jechulok-submission
         run: python -m unittest discover -s tests -v
-      - name: Build and verify v2.4 portable Agent Skill ZIP (Linux 3.11)
+      - name: Build and verify v2.5 portable Agent Skill ZIP (Linux 3.11)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         working-directory: .agents/skills/jechulok-submission
         shell: bash
         run: |
-          mkdir -p "$RUNNER_TEMP/jechulok-v24"
-          python scripts/release_v20.py build --output-dir "$RUNNER_TEMP/jechulok-v24"
-          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-v24/jechulok-agent-skill-v2.4.0.zip"
+          mkdir -p "$RUNNER_TEMP/jechulok-v25"
+          python scripts/release_v20.py build --output-dir "$RUNNER_TEMP/jechulok-v25"
+          python scripts/release_v20.py verify --archive "$RUNNER_TEMP/jechulok-v25/jechulok-agent-skill-v2.5.0.zip"
           python - <<'PY'
           import os
           from pathlib import Path
-          root = Path(os.environ["RUNNER_TEMP"]) / "jechulok-v24"
-          assert (root / "jechulok-agent-skill-v2.4.0.zip").is_file()
-          assert (root / "jechulok-agent-skill-v2.4.0.sha256").is_file()
-          print("Portable v2.4 release built and verified")
+          root = Path(os.environ["RUNNER_TEMP"]) / "jechulok-v25"
+          assert (root / "jechulok-agent-skill-v2.5.0.zip").is_file()
+          assert (root / "jechulok-agent-skill-v2.5.0.sha256").is_file()
+          print("Portable v2.5 release built and verified")
           PY
-      - name: Upload portable v2.4 Agent Skill release candidate
+      - name: Upload portable v2.5 Agent Skill release candidate
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && always()
         uses: actions/upload-artifact@v4
         with:
-          name: jechulok-agent-skill-v2.4.0
-          path: ${{ runner.temp }}/jechulok-v24/*
+          name: jechulok-agent-skill-v2.5.0
+          path: ${{ runner.temp }}/jechulok-v25/*
           if-no-files-found: error
           retention-days: 30
       - name: Verify offline update and version consistency (all platforms)
@@ -77,10 +77,10 @@ jobs:
               "--allowed-dir", str(Path.cwd().resolve())
           ], capture_output=True, text=True, check=True)
           result = json.loads(outcome.stdout)
-          assert result["current_version"] == "2.4.0"
+          assert result["current_version"] == "2.5.0"
           assert result["status"] == "offline"
           assert not result["download_performed"]
-          print("v2.4 offline update check OK")
+          print("v2.5 offline update check OK")
           PY
       - name: Accessible v2.3 guide is read-only and never probes automatically
         working-directory: .agents/skills/jechulok-submission
@@ -158,6 +158,35 @@ jobs:
         with:
           name: jechulok-first-run-v24-synthetic
           path: ${{ runner.temp }}/jechulok-first-run-v24.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: v2.5 synthetic opt-in feedback and privacy aggregate regression
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        working-directory: .agents/skills/jechulok-submission
+        shell: bash
+        run: |
+          python scripts/feedback_audit_v25.py --check > "$RUNNER_TEMP/jechulok-feedback-v25.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-feedback-v25.json").read_text())
+          assert report["status"] == "pass", report
+          assert report["scenario_count"] == 31
+          assert report["passed_cases"] == 31
+          assert report["participants"] == 0
+          assert report["actual_feedback_collected"] is False
+          assert report["actual_user_satisfaction"] is None
+          assert report["telemetry_sent"] is False
+          assert report["automatic_upload"] is False
+          assert report["existing_user_files_changed"] is False
+          print("v2.5: synthetic feedback privacy regression passed")
+          PY
+      - name: Upload synthetic-only v2.5 feedback audit JSON
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-feedback-v25-synthetic
+          path: ${{ runner.temp }}/jechulok-feedback-v25.json
           if-no-files-found: error
           retention-days: 30
       - name: Evaluate 100 synthetic guidance scenarios (Linux 3.11)
@@ -274,7 +303,7 @@ jobs:
           from pathlib import Path
           data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "jechulok-beta-check.json").read_text())
           assert data["status"] == "pass", data
-          assert data["version"] == "2.4.0"
+          assert data["version"] == "2.5.0"
           assert data["tool_count"] == 20
           assert data["network_used"] is False
           assert data["documents_read"] is False
