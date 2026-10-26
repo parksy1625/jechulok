@@ -2,9 +2,28 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v3.0.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v3.1.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v3.1: 진짜 서류 없이 로컬 처리 전체 연습
+
+`offline_demo_v31.py`는 먼저 **파일을 만들지 않는 미리보기**를 보여줘요.
+`--run`을 직접 지정해야 그림 PNG와 3페이지 가상 PDF를 임시 폴더에서
+생성해 실제 JPG 변환·페이지 추출·결과 재검증을 실행합니다.
+성공과 실패 양쪽에서 임시 파일을 정리하고, 보고서에 개인 경로나
+파일 내용을 넣지 않아요. 사용자 문서·MCP 설정·인터넷에는 접근하지 않습니다.
+
+```bash
+cd .agents/skills/jechulok-submission
+python scripts/offline_demo_v31.py --run --format json
+```
+
+이것은 **합성 파일에 대한 기술적 처리 점검**이며 실제 기관 접수 성공을
+보증하지 않습니다. 기존 MCP 20개 도구의 권한과 동작은 그대로입니다.
+
+**[v3.1 사용법](.agents/skills/jechulok-submission/QUICKSTART.md)** /
+**[v3.1 릴리스 노트](.agents/skills/jechulok-submission/RELEASE_NOTES_v31.md)**
 
 ### v3.0: 처음 설치하는 사용자용 통합 점검
 
