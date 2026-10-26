@@ -1,4 +1,4 @@
-# 제출OK MCP v2.4 — local stdio server
+# 제출OK MCP v2.5 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
 
@@ -884,3 +884,19 @@ synthetic workflow states and 6 grouped source-selection prompts.
 The comparison with one individual prompt per missing file is
 **counterfactual**, not observed user interaction. See
 RELEASE_NOTES_v24.md for the audit's boundaries.
+
+
+## v2.5 — No-telemetry, separate feedback utility
+
+The 20 existing stdio MCP tools and their approval protections have not
+changed. An optional local script (`scripts/feedback_v25.py`) allows
+users to preview, explicitly save or locally aggregate categorical
+feedback. It is NOT triggered from MCP, never reads past interactions
+or applicant documents, never transmits anything and stores no freeform
+data, timestamps, identifiers or filenames.
+
+The tool accepts only allowlisted stage/issue/impact values and requires
+an explicit feedback folder for saving. Aggregate category results are
+redacted for fewer than five entries or categories under three.
+No actual feedback has been collected in CI; only 31 synthetic checks
+exercise the implementation. See FEEDBACK.md for exact commands.
