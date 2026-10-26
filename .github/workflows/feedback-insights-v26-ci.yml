@@ -20,4 +20,11 @@ jobs:
           python-version: '3.11'
       - name: Check opt-in feedback priority and cohort comparisons
         working-directory: .agents/skills/jechulok-submission
-        run: python scripts/feedback_insights_audit_v26.py --check
+        run: python scripts/feedback_insights_audit_v26.py --check > insights-v26.json
+      - name: Upload synthetic v2.6 quality comparison report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-v26-feedback-insights-synthetic
+          path: .agents/skills/jechulok-submission/insights-v26.json
+          if-no-files-found: error
+          retention-days: 30
