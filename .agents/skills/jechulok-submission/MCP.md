@@ -1,6 +1,14 @@
-# 제출OK MCP v2.8 — local stdio server
+# 제출OK MCP v2.9 — local stdio server
 
 **Purpose:** Let an MCP-capable AI assistant inspect files, prepare compliant JPG photos, extract PDF pages, and independently verify the output. Uses the same Python processing functions as the v0.1 CLI. **It does not upload files or expose an HTTP endpoint.** This is an independent Python implementation, not the JavaScript web site's engine.
+
+**v2.9 client config audit:** When the user explicitly authorizes reading the
+actual local Codex/Cursor/Claude MCP settings file, run
+`python scripts/setup_mcp.py config-check --client codex --allowed-dir WORK_FOLDER --config-file CONFIG_FILE`
+with the applicable client and file. Only the explicitly supplied, bounded
+regular TOML/JSON file is read. The output provides fixed repair codes without
+paths or tokens. It does **not** authenticate an MCP server, start a process,
+write settings or verify the host loaded that file. See QUICKSTART.md §4-1.
 
 ## Install
 

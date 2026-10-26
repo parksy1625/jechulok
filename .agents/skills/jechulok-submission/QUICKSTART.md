@@ -1,4 +1,4 @@
-# 제출OK Agent Skill + MCP v2.8 빠른 시작
+# 제출OK Agent Skill + MCP v2.9 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
@@ -97,6 +97,33 @@ Claude Desktop의 MCP 서버 설정에 해당 서버 항목만 병합하세요.
 
 이 서버는 로컬 **stdio** 전용입니다. 네트워크 URL로 등록하는 서버가 아닙니다.
 클라우드에서 실행되는 AI 세션은 사용자 PC의 파일에 자동 접근할 수 없습니다.
+
+## 4-1. 클라이언트 설정 파일 자가진단 (v2.9)
+
+서버 측 `probe`는 통과해도 AI 앱에서 도구가 보이지 않는다면, **본인이
+지정한 로컬 설정 파일만** 확인할 수 있어요. 실제 파일은 다른 MCP의 토큰도
+포함할 수 있으므로 내용이나 스크린샷을 그대로 공유하지 마세요.
+
+```bash
+python3 scripts/setup_mcp.py config-check --client codex \
+  --allowed-dir "/absolute/path/to/test-folder" \
+  --config-file "/absolute/path/to/config.toml"
+```
+
+Cursor는 `--client cursor --config-file "/path/to/mcp.json"`, Claude Desktop은
+`--client claude-desktop --config-file "/path/to/claude_desktop_config.json"`으로
+바꿔 사용하세요. 실제 설정 파일 위치는 해당 앱의 설정 메뉴에서 직접 확인해야
+합니다. 이 명령은 설정 파일을 자동 탐색하지 않아요.
+
+`config_matches`라면 스킬이 생성하는 `.venv` Python 경로, 서버 스크립트,
+허용 폴더가 설정 내용과 일치한 거야. 불일치 시 `command_mismatch`,
+`args_mismatch`, `allowed_directory_mismatch`, `server_entry_missing`,
+`config_format_invalid` 등의 고정 코드와 수정 가이드를 출력해요.
+경로·토큰·설정 원문은 출력하지 않고, 설정을 자동 수정하거나 앱을 실행하지 않아요.
+
+**주의:** 일치 판정은 그 파일을 앱이 실제로 읽었다는 증거가 아니야.
+별도로 앱을 재시작해 자체 MCP 연결 상태를 확인하고, 필요하면
+`setup_mcp.py probe`로 로컬 서버 응답을 다시 확인하세요.
 
 ## 5. 실제 대화 예시
 
