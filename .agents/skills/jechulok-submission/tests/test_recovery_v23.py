@@ -36,7 +36,7 @@ class RecoveryPreviewV23Tests(unittest.TestCase):
         before = {p.name for p in self.root.iterdir()}
         r = plan_recovery(self.archive, self.destination, installed_root=ROOT)
         self.assertEqual(r["status"], "planned")
-        self.assertEqual(r["archive_version"], "2.4.0")
+        self.assertEqual(r["archive_version"], "2.5.0")
         self.assertFalse(r["publisher_authenticated"])
         self.assertFalse(r["existing_installation_modified"])
         self.assertTrue(r["requires_manual_client_switch"])
