@@ -1,0 +1,45 @@
+name: JeChulOK v2.9 Synthetic Client Config Audit
+on:
+  push:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/client-config-v29-ci.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/client-config-v29-ci.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-client-config-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test six synthetic client config and privacy cases
+        working-directory: .agents/skills/jechulok-submission
+        run: python scripts/client_config_audit_check_v29.py --check > client-config-v29.json
+      - name: Verify output makes no actual host or privacy claims
+        working-directory: .agents/skills/jechulok-submission
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('client-config-v29.json').read_text())
+          assert data['status'] == 'pass'
+          assert data['scenario_count'] == data['passed_cases'] == 6
+          assert data['actual_client_configurations_opened'] == 0
+          assert data['host_registration_verified'] is False
+          assert data['network_used'] is False
+          assert data['telemetry_sent'] is False
+          assert data['user_documents_modified'] is False
+          PY
+      - name: Upload synthetic-only configuration audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-v29-client-config-synthetic
+          path: .agents/skills/jechulok-submission/client-config-v29.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JeChulOK v2.3 installation, local diagnostics and opt-in MCP client config.
+"""JeChulOK v2.9 installation, local diagnostics and opt-in MCP client config.
 
 Standard-library only. Importing the module never installs dependencies,
 edits Codex/Claude/Cursor settings, or launches the MCP server.
@@ -19,6 +19,7 @@ from diagnostics_v21 import installation_checks
 from version_check_v21 import check_latest
 from onboarding_v22 import guide as build_guide, render_text
 from recovery_plan_v23 import plan_recovery
+from client_config_audit_v29 import audit_client_config
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SERVER_SCRIPT = SKILL_ROOT / "scripts" / "mcp_server.py"
@@ -264,12 +265,15 @@ def build_parser() -> argparse.ArgumentParser:
         description="JeChulOK local-only MCP setup. Never changes client settings."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("install", "doctor", "config", "probe", "status", "upgrade", "updates", "beta-check", "guide", "recovery-plan"):
+    for command in ("install", "doctor", "config", "config-check", "probe", "status", "upgrade", "updates", "beta-check", "guide", "recovery-plan"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--allowed-dir", required=True,
                          help="Existing canonical local directory containing your submission files")
-        if command in {"config", "guide"}:
+        if command in {"config", "config-check", "guide"}:
             cmd.add_argument("--client", choices=CLIENTS, default="codex")
+        if command == "config-check":
+            cmd.add_argument("--config-file", type=Path, required=True,
+                             help="Explicit local MCP client configuration file; read-only (may contain secrets)")
         if command == "guide":
             cmd.add_argument("--language", choices=("ko", "en"), default="ko",
                              help="Plain-language Korean/English instructions")
@@ -365,6 +369,15 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "config":
             print(client_configuration(args.client, venv_python(), root), end="")
             return 0
+        if args.command == "config-check":
+            expectation = {
+                "command": str(venv_python().absolute()),
+                "args": [str(SERVER_SCRIPT)],
+                "env": {"JECHULOK_ALLOWED_DIRS": str(root)},
+            }
+            report = audit_client_config(args.client, args.config_file, expectation)
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 0 if report["status"] == "pass" else 1
         if args.command == "probe":
             result = probe_connection(root, venv_python())
             print(json.dumps(result, ensure_ascii=False, indent=2))

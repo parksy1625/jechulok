@@ -90,7 +90,7 @@ class UpdateCheckV21Tests(unittest.TestCase):
             self.assertEqual(code, 0)
             result = json.loads(out.getvalue())
             self.assertEqual(result["status"], "offline")
-            self.assertEqual(result["current_version"], "2.8.0")
+            self.assertEqual(result["current_version"], "2.9.0")
 
 
 class LocalIntegrityV21Tests(unittest.TestCase):
@@ -98,7 +98,7 @@ class LocalIntegrityV21Tests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name).resolve()
         build(self.root)
-        self.archive = self.root / "jechulok-agent-skill-v2.8.0.zip"
+        self.archive = self.root / "jechulok-agent-skill-v2.9.0.zip"
         self.extracted = self.root / "unpacked"
         extract(self.archive, self.extracted, execute=True)
 
@@ -129,7 +129,7 @@ class LocalIntegrityV21Tests(unittest.TestCase):
     def test_modified_version_and_invalid_manifest_path_fail_closed(self):
         (self.extracted / "VERSION").write_text("0.0.0\n", encoding="utf-8")
         self.assertFalse(installation_checks(self.extracted)[0]["passed"])
-        (self.extracted / "VERSION").write_text("2.8.0\n", encoding="utf-8")
+        (self.extracted / "VERSION").write_text("2.9.0\n", encoding="utf-8")
         manifest = self.extracted / "MANIFEST.json"
         doc = json.loads(manifest.read_text(encoding="utf-8"))
         doc["files"]["../../outside"] = {"bytes": 5, "sha256": "0" * 64}
@@ -151,7 +151,7 @@ class LocalIntegrityV21Tests(unittest.TestCase):
                 result = setup_mcp.main(["beta-check", "--allowed-dir", str(self.root)])
         self.assertEqual(result, 0)
         data = json.loads(out.getvalue())
-        self.assertEqual(data["version"], "2.8.0")
+        self.assertEqual(data["version"], "2.9.0")
         self.assertEqual(data["tool_count"], 20)
         self.assertFalse(data["network_used"])
         self.assertFalse(data["documents_read"])

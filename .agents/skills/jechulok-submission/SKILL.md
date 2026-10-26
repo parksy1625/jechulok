@@ -1,14 +1,27 @@
 ---
 name: jechulok-submission
-description: Parse Korean technical submission criteria, prepare JPG images or selected PDF pages on local disk, and recheck output requirements. Use when users ask to resize a photo to exact pixels, limit a JPG file to a KB threshold, inspect image/PDF format and dimensions/pages, or prepare a locally verifiable submission file. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
+description: Parse Korean technical submission criteria, prepare JPG images or selected PDF pages on local disk, recheck output requirements, and troubleshoot explicitly supplied local MCP client registration for Codex, Cursor or Claude Desktop. Use for photo resizing, JPG KB limits, local image/PDF format checks, submission preparation, or diagnosing MCP setup. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
 license: MIT
 metadata:
   author: jechulok
-  version: "2.8.0"
+  version: "2.9.0"
   compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.9 — Check actual MCP client configuration (only when explicitly requested)
+
+For Codex, Cursor or Claude Desktop, use `scripts/setup_mcp.py config-check`
+with `--allowed-dir`, `--client` and **`--config-file` explicitly supplied by
+the operator**. It reads that local TOML/JSON file (which may contain secrets),
+checks the JeChulOK `command`, `args` and allowed folder against the generated
+installation settings and returns curated mismatch codes **without echoing
+config contents, tokens or absolute paths**. Never auto-locate config files or
+run this against a user's config without permission. It does not connect to the
+host or modify anything. If the result matches, next ask the operator to
+restart the host, check its own connection status and optionally run `probe`.
+Use `QUICKSTART.md` for syntax and `RELEASE_NOTES_v29.md` for limitations.
 
 ## v2.8 — Prepare an opt-in beta study without collecting participants
 
