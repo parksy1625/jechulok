@@ -78,3 +78,25 @@ controlling for who responded and how the questions were asked.
 The v2.5 synthetic suite contains 30 generated responses plus one
 aggregate safety check. No real user responded; its pass rate is only
 a software-regression result, not measured user satisfaction.
+
+
+## v2.6 — Local frequency-priority and two-cohort comparison
+
+After collecting voluntary categorical feedback, optionally run:
+
+    python scripts/feedback_insights_v26.py prioritize --directory LOCAL_FEEDBACK_FOLDER
+
+    python scripts/feedback_insights_v26.py compare       --baseline-directory OLDER_LOCAL_FOLDER       --current-directory NEWER_LOCAL_FOLDER
+
+Only directories explicitly chosen by the user are accessed.
+No individual feedback is returned, stored in a generated report,
+or sent off the machine. At least ten entries per cohort and an
+unsuppressed v2.5 issue-category dimension are required.
+Small cohorts are withheld; output is not automatically safe to
+publish. Category counts are frequencies, not per-issue severity
+or representative population incidence.
+
+Original records contain no real app version or human participant IDs,
+so 'baseline' and 'current' are caller descriptions, not verifiable
+cohorts. Treat comparisons as descriptive only, never demonstrated
+causal changes in product quality. See RELEASE_NOTES_v26.md.
