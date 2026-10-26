@@ -20,3 +20,7 @@
 jechulok-agent-skill-v*.zip
 jechulok-agent-skill-v*.sha256
 .jechulok-release-*/
+
+# Private user-selected v2.5 feedback records; never commit actual responses
+*.feedback-v25.json
+.agents/skills/jechulok-submission/private-feedback/
