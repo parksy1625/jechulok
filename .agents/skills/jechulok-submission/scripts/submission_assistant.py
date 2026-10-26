@@ -1,4 +1,4 @@
-"""JeChulOK v1.7: stateless, user-centered guided MCP entry point.
+"""JeChulOK v2.4: stateless, user-centered guided MCP entry point.
 
 One tool surfaces one useful human-facing next action without guessing
 assignments, granting human approval, or bypassing preflight/locking.
@@ -13,6 +13,7 @@ from typing import Any, Callable, Literal
 
 from guided_experience import guide_next_step
 from guided_clarity import explain_plan_blockers, missing_file_choices, notice_issues
+from first_run_ux_v24 import progress_view
 from review_workflow import review_plan, verify_package
 
 
@@ -39,7 +40,7 @@ def _envelope(
     status: str, step: int, *, next_action: str,
     question: str, **extra: Any,
 ) -> dict[str, Any]:
-    return {
+    result = {
         "status": status,
         "workflow": {
             "name": "제출OK 안내 모드",
@@ -58,6 +59,10 @@ def _envelope(
         "automatic_upload": False,
         **extra,
     }
+    # Add the same privacy-safe, deterministic status card to ALL outcomes,
+    # including missing input, errors, cancellation and final verification.
+    result["experience"] = progress_view(result)
+    return result
 
 
 def assist(
