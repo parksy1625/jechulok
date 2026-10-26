@@ -2,9 +2,29 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v2.5.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v2.6.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v2.6: 피드백 개선 우선순위와 버전별 기술통계 비교
+
+v2.5에서 사용자가 직접 남긴 **로컬 범주형 피드백**을 분석하는
+별도 `feedback_insights_v26.py` 도구를 추가했어.
+
+- `prioritize --directory ...`: 불편 유형의 **응답 빈도** 순위를 확인
+- `compare --baseline-directory ... --current-directory ...`:
+  두 폴더의 응답 비율 차이를 비교
+- 각 집단에서 10건 이상이 필요하고, 소수 응답이 노출될 우려가
+  있으면 세부 분석을 보류해.
+- 파일 경로·개인정보·공고 원문·실제 사용자 기록은 출력하지 않으며,
+  자동 저장이나 인터넷 전송도 없어.
+- 독립적인 **20개 합성 평가 조건**과 단위 테스트를 추가했어.
+
+**주의:** 자발적 피드백 빈도는 영향도나 사용자 전체의 만족도를
+측정하지 않아. 두 폴더의 비교도 사용자 중복이나 버전 귀속을
+확인할 수 없으므로 실제 개선 인과관계를 증명하지 못해.
+
+**[v2.6 릴리스 노트](.agents/skills/jechulok-submission/RELEASE_NOTES_v26.md)**
 
 ### v2.5: 개인정보 없이 선택적으로 피드백 남기기
 
@@ -381,7 +401,7 @@ GitHub Actions가 Ubuntu·macOS·Windows에서 각각 Python 3.11·3.13 조합�
 **기능 제안·버그:** 이 저장소의 GitHub Issues에 남겨주세요.
 
 
-## MCP v2.5 — AI가 직접 호출하는 로컬 도구
+## MCP v2.6 — AI가 직접 호출하는 로컬 도구
 
 기존 CLI 외에 **표준 MCP(stdio) 서버**를 지원합니다. AI가 `check_file`,
 `prepare_image`, `extract_pdf_pages`, `verify_submission`, `assist_submission` 등의 20개 도구를
@@ -393,7 +413,7 @@ python -m pip install -r requirements-mcp.txt
 ```
 
 Codex 연결 방법, 허용 폴더 설정(`JECHULOK_ALLOWED_DIRS`), 테스트와 제한 사항은
-**[MCP v2.5 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
+**[MCP v2.6 설명서](.agents/skills/jechulok-submission/MCP.md)**를 참고하세요.
 
 서버는 로컬 stdio로만 통신하며 네트워크 API를 열지 않습니다.
 **GitHub 저장소를 복제했다고 AI에 자동 설치되는 것은 아닙니다.** 사용자의
