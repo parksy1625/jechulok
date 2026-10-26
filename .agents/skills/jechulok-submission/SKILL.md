@@ -5,10 +5,34 @@ license: MIT
 compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 metadata:
   author: jechulok
-  version: "2.4.0"
+  version: "2.5.0"
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v2.5 — Human-initiated, categorical, local-only feedback
+
+A separate CLI, `scripts/feedback_v25.py`, now supports `preview`,
+`save` and `summary` for voluntary product feedback. This is NOT
+automatic MCP telemetry: no tracking, email, freeform notice text,
+source paths, timestamps, user IDs, system fingerprint or network
+access is allowed. Three fields only: stage, issue and impact categories.
+
+Preview makes no changes. Saving requires an explicit existing canonical
+destination directory and creates an exclusive local JSON record with
+POSIX 0600 permission. The local `summary` command suppresses
+all breakdowns if there are under five entries and suppresses an entire
+dimension if any category count is under three. Sharing results requires
+a separate manual privacy review; the tool never uploads data.
+
+`python scripts/feedback_audit_v25.py --check` exercises 30 invented
+responses and one aggregate safety check. These **31 synthetic conditions**
+are NOT actual user feedback, user satisfaction scores or a representative
+sample. No external volunteers were recruited by this release.
+
+Full instructions: FEEDBACK.md and RELEASE_NOTES_v25.md.
+All existing 20 MCP tools, local file scope and manual approvals remain.
+
 
 ## v2.4 — First-run guided UX state (no new permissions)
 
