@@ -1,9 +1,34 @@
-# 제출OK Agent Skill + MCP v2.9 빠른 시작
+# 제출OK Agent Skill + MCP v3.0 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
 Python 3.11+와 인터넷 연결(최초 패키지 설치 시)이 필요합니다.
 파일 준비와 MCP 통신은 설치 후 로컬에서 작동하며 파일을 업로드하지 않습니다.
+
+### 새 사용자: 첫 실행 통합 점검 (v3.0)
+
+설치 전·후 모두 다음 한 명령으로 현재 단계와 **다음 수동 작업 1개**를 확인하세요.
+
+```bash
+python3 scripts/setup_mcp.py checkup --allowed-dir "/absolute/path/to/test-folder"
+```
+
+기본 동작은 로컬 설치 환경만 진단하며, MCP 서버는 시작하지 않고
+클라이언트 설정 파일도 열지 않습니다. 사용자가 별도로 승인한 경우에만:
+
+```bash
+python3 scripts/setup_mcp.py checkup --allowed-dir "/absolute/path/to/test-folder" --probe
+python3 scripts/setup_mcp.py checkup --client codex \
+  --allowed-dir "/absolute/path/to/test-folder" --probe \
+  --config-file "/absolute/path/to/config.toml" --format json
+```
+
+`--probe`는 로컬 MCP 서버를 시험 실행하고 `--config-file`은 해당 설정 파일만
+읽습니다. 실제 설정에는 다른 도구의 토큰이 들어있을 수 있으니 공유하지 마세요.
+설치가 손상됐으면 두 검사를 실행하지 않습니다. 최종
+`ready_for_manual_host_check`도 **AI 앱에서 실제 도구가 등록됐다는 뜻은 아니며**,
+앱 재시작·도구 목록·연습용 호출은 사용자가 별도로 확인해야 합니다.
+
 
 ## 1. 복제하고 설치하기
 
