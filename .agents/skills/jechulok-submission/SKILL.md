@@ -1,14 +1,34 @@
 ---
 name: jechulok-submission
-description: Parse Korean technical submission criteria, prepare JPG images or selected PDF pages on local disk, recheck output requirements, and troubleshoot explicitly supplied local MCP client registration for Codex, Cursor or Claude Desktop. Use for photo resizing, JPG KB limits, local image/PDF format checks, submission preparation, or diagnosing MCP setup. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
+description: Parse Korean technical submission criteria, preview effects and risks of preparing an explicitly selected local JPG/PDF file without modifying it, prepare JPG images or selected PDF pages after separate approval, recheck output requirements, and troubleshoot explicitly supplied local MCP client registration for Codex, Cursor or Claude Desktop. Use for photo resizing, JPG KB limits, read-only conversion previews, local image/PDF format checks, submission preparation, or diagnosing MCP setup. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
 license: MIT
 metadata:
   author: jechulok
-  version: "3.1.0"
+  version: "3.2.0"
   compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v3.2 — Preview actual selected file before asking for conversion approval
+
+When the user **explicitly chooses one local file** and wants to understand
+the effect of preparing it, run `python scripts/preview_prepare_v32.py
+--input FILE --rules 'JPG 가로 300픽셀 세로 400픽셀 500KB 이하'`. For PDF,
+ask the user to specify kept pages and pass `--pages '2-3'` when needed.
+This is a strictly read-only preview: it parses the rules before inspecting
+the file, reports predictable output dimensions, estimated padding/cropped
+area, selected PDF pages and known technical risks, but **never** predicts
+exact JPEG/PDF bytes or guarantees a final size. `--mode cover` previews
+center-cropping risk only; the actual crop still needs a separate express
+approval. An existing/unsafe proposed output path blocks the plan.
+
+Do not auto-select personal files, inspect entire folders, convert from
+this report, or treat `ready_for_review` as approval. Result JSON deliberately
+omits file names, source/target paths, free-form notices and library error
+messages. Real output verification and manual institutional checks remain
+separate. See RELEASE_NOTES_v32.md and QUICKSTART.md. Existing MCP tools and
+human approval gates remain unchanged.
 
 ## v3.1 — Rehearse with invented JPG/PDF files (explicit opt-in)
 
