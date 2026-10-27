@@ -1,14 +1,37 @@
 ---
 name: jechulok-submission
-description: Parse Korean technical submission criteria, preview effects and risks of preparing an explicitly selected local JPG/PDF file without modifying it, prepare JPG images or selected PDF pages after separate approval, recheck output requirements, and troubleshoot explicitly supplied local MCP client registration for Codex, Cursor or Claude Desktop. Use for photo resizing, JPG KB limits, read-only conversion previews, local image/PDF format checks, submission preparation, or diagnosing MCP setup. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
+description: Parse Korean technical submission criteria, preview effects and risks of preparing an explicitly selected local JPG/PDF file, bind a preview to source bytes and output location, verify a separately prepared result against the preview without modifying it, prepare JPG images or selected PDF pages after separate approval, and troubleshoot explicitly supplied local MCP client registration for Codex, Cursor or Claude Desktop. Use for photo resizing, JPG KB limits, read-only conversion previews, JPG/PDF postflight checking, local file format checks, submission preparation, or diagnosing MCP setup. Do not use for document content review, passport-photo compliance, OCR, legally binding signatures, Office conversions, or automatic uploads.
 license: MIT
 metadata:
   author: jechulok
-  version: "3.2.0"
+  version: "3.3.0"
   compatibility: Python 3.11+ with Pillow and pypdf installed. Local filesystem read/write permission required; no network access used during processing.
 ---
 
 # JeChulOK Submission Agent Skill
+
+## v3.3 — Bind preview to explicitly selected source and check post-conversion output
+
+For an explicitly selected input and NEW destination, prefer `python
+scripts/conversion_guard_v33.py preview --input FILE --output NEW_FILE
+--rules 'JPG 가로 300픽셀 세로 400픽셀 500KB 이하'` and let the operator
+explicitly save its JSON to a protected, local file. For PDF pass
+`--pages '2-3'`. **Do not prepare anything during this step.**
+
+Only after independent, explicit approval may the operator invoke the
+existing `jechulok.py prepare-image|prepare-pdf` command. Then run
+`python scripts/conversion_guard_v33.py verify --preview-json PLAN
+--input FILE --output NEW_FILE`. This **read-only** verifier rejects altered
+source bytes, different target, changed format/dimensions/size, incompatible
+PDF page geometry/order or nonwhite planned JPG borders. A tiny border is
+reported unverified. It neither deletes failed outputs nor proves JPG content
+identity, PDF page content, signatures, institutional acceptance, or user
+approval. A passing postflight check does **not** authorize uploads.
+
+Do not accept untrusted preview JSON as approval or an authenticity proof;
+its local checksum detects accidental changes only. No file paths or notice
+contents appear in returned JSON. See RELEASE_NOTES_v33.md and QUICKSTART.md.
+The existing twenty MCP tools and v3.2 preview remain unchanged.
 
 ## v3.2 — Preview actual selected file before asking for conversion approval
 
