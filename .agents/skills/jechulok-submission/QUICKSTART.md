@@ -1,9 +1,46 @@
-# 제출OK Agent Skill + MCP v3.2 빠른 시작
+# 제출OK Agent Skill + MCP v3.3 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
 Python 3.11+와 인터넷 연결(최초 패키지 설치 시)이 필요합니다.
 파일 준비와 MCP 통신은 설치 후 로컬에서 작동하며 파일을 업로드하지 않습니다.
+
+### v3.3: 미리보기와 실제 변환 결과 비교
+
+다음 명령은 **기존 파일 하나**를 읽고 미리보기 JSON을 출력합니다.
+`--output`은 앞으로 만들 새 파일의 이름일 뿐 이 단계에서 생성하지 않아요.
+
+```bash
+python3 scripts/conversion_guard_v33.py preview \
+  --input "/absolute/path/my-photo.png" \
+  --output "/absolute/path/ready-photo.jpg" \
+  --rules "JPG 가로 300픽셀 세로 400픽셀 500KB 이하" > my-preview.json
+```
+
+미리보기 내용을 검토한 다음, **별도로 명시적인 변환 승인을 받은 경우에만**
+원래 변환 명령을 실행하세요.
+
+```bash
+python3 scripts/jechulok.py prepare-image \
+  --input "/absolute/path/my-photo.png" \
+  --output "/absolute/path/ready-photo.jpg" \
+  --width 300 --height 400 --max-kb 500
+
+python3 scripts/conversion_guard_v33.py verify \
+  --preview-json my-preview.json \
+  --input "/absolute/path/my-photo.png" \
+  --output "/absolute/path/ready-photo.jpg"
+```
+
+PDF도 동일합니다. 첫 명령은 `--rules "PDF 최대 2페이지" --pages "2-3"`를
+사용하고, 별도 승인 이후 `jechulok.py prepare-pdf --pages "2-3"
+--max-pages 2`로 새 PDF를 준비합니다.
+
+`pass`는 **기술 조건과 일부 기하학적 특성**의 일치 여부만 의미합니다.
+서류 내용·사진의 인물·PDF 텍스트 또는 페이지 내용·서명·기관의 실제
+접수 성공은 증명하지 못합니다. 기존 출력 파일의 자동 삭제·수정·업로드도
+실행하지 않으며, `ready_for_review` 역시 변환 승인으로 간주하지 않습니다.
+자세한 사항은 `RELEASE_NOTES_v33.md`를 참고하세요.
 
 ### v3.2: 변환 전에 변경 결과와 위험 미리보기
 

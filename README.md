@@ -2,9 +2,24 @@
 
 무료 파일 제출 준비 도구: https://jechulok.vercel.app/
 
-## Agent Skill + local MCP v3.2.0 — AI가 로컬에서 제출 파일을 준비하도록
+## Agent Skill + local MCP v3.3.0 — AI가 로컬에서 제출 파일을 준비하도록
 
 **[JeChulOK Submission Skill](.agents/skills/jechulok-submission/SKILL.md)**을 제공해요. Python 기반의 독립형 로컬 CLI로 JPG 사진 규격 검사·변환과 PDF 페이지 추출을 수행하고, 출력 파일의 실제 형식·용량·픽셀·페이지 수를 다시 확인합니다. 사용자 파일을 서버로 업로드하지 않으며, 기존 파일을 덮어쓰지 않습니다.
+
+### v3.3: 승인 전 미리보기와 변환 후 출력의 일치 점검
+
+`conversion_guard_v33.py`는 사용자 지정 한 파일의 미리보기를
+원본 내용·새 출력 위치와 연결해 둔 다음, **별도로 승인된 변환이 끝난 뒤**
+새 파일이 예상 규격과 맞는지 읽기 전용으로 확인합니다.
+
+- 원본 파일 변경 또는 다른 출력 경로 사용 시 즉시 중단
+- JPG 실제 크기·용량·흰 여백 일부와 PDF 페이지 수·페이지 크기/순서 확인
+- 예측과 불일치하면 `blocked`, 아주 좁은 여백은 `needs_review`
+- 경로·원문 미노출, 자동 변환·삭제·업로드 없음
+
+실제 사진 내용이나 PDF 페이지 내용·서명 및 접수 성공을 보증하지 않습니다.
+**[v3.3 사용법](.agents/skills/jechulok-submission/QUICKSTART.md)** /
+**[v3.3 릴리스 노트](.agents/skills/jechulok-submission/RELEASE_NOTES_v33.md)**
 
 ### v3.2: 파일을 바꾸기 전에 예상 결과와 위험 확인
 

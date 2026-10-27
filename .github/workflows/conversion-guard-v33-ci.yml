@@ -1,0 +1,49 @@
+name: JeChulOK v3.3 Synthetic Postflight Audit
+on:
+  push:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/conversion-guard-v33-ci.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/jechulok-submission/**'
+      - '.github/workflows/conversion-guard-v33-ci.yml'
+permissions:
+  contents: read
+jobs:
+  postflight-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install offline file processing dependencies
+        working-directory: .agents/skills/jechulok-submission
+        run: python -m pip install -r requirements.txt
+      - name: Run invented-file postflight regressions
+        working-directory: .agents/skills/jechulok-submission
+        run: python scripts/conversion_guard_audit_v33.py --check > conversion-guard-v33.json
+      - name: Assert synthetic-only audit and privacy summary
+        working-directory: .agents/skills/jechulok-submission
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('conversion-guard-v33.json').read_text())
+          assert data['status'] == 'pass', data
+          assert data['scenario_count'] == data['passed_count'] == 8
+          assert data['synthetic_only'] and data['synthetic_files_cleaned_up']
+          assert data['no_path_leaked']
+          assert not data['user_documents_read']
+          assert not data['production_files_written']
+          assert not data['network_used']
+          assert not data['uploads_performed']
+          PY
+      - name: Upload synthetic-only audit JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: jechulok-v33-postflight-synthetic
+          path: .agents/skills/jechulok-submission/conversion-guard-v33.json
+          if-no-files-found: error
+          retention-days: 30
