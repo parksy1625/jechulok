@@ -1,9 +1,41 @@
-# 제출OK Agent Skill + MCP v3.1 빠른 시작
+# 제출OK Agent Skill + MCP v3.2 빠른 시작
 
 제출OK는 **사용자 컴퓨터에서 실행되는 로컬 프로그램**입니다. 이 저장소를 복제하거나
 이 웹페이지를 방문하는 것만으로 AI 클라이언트에 자동 연결되지는 않습니다.
 Python 3.11+와 인터넷 연결(최초 패키지 설치 시)이 필요합니다.
 파일 준비와 MCP 통신은 설치 후 로컬에서 작동하며 파일을 업로드하지 않습니다.
+
+### v3.2: 변환 전에 변경 결과와 위험 미리보기
+
+사용자가 **직접 지정한 파일 한 개**를 읽고, 제출 규격과 비교해
+변환 후 예상 픽셀 크기·여백/잘림 정도·PDF 선택 페이지·주의 사항을
+보여줍니다. 이 명령 자체는 파일을 만들거나 덮어쓰지 않습니다.
+
+```bash
+python3 scripts/preview_prepare_v32.py \
+  --input "/absolute/path/to/my-photo.png" \
+  --rules "JPG 가로 300픽셀 세로 400픽셀 500KB 이하"
+
+# 사진의 일부를 잘라야 하는 모드의 위험만 미리 보여주기
+python3 scripts/preview_prepare_v32.py \
+  --input "/absolute/path/to/my-photo.png" \
+  --rules "JPG 가로 300픽셀 세로 400픽셀 500KB 이하" --mode cover
+
+# PDF 페이지 추출 미리보기
+python3 scripts/preview_prepare_v32.py \
+  --input "/absolute/path/to/document.pdf" \
+  --rules "PDF 최대 2페이지" --pages "2-3" --format json
+```
+
+`ready_for_review`는 변환이 가능해 보인다는 **사전 진단**이고,
+사용자의 변환 승인이 아닙니다. PDF 3페이지 이상인데 2페이지 제한이면
+유지할 페이지를 명시해야 합니다. `--output`으로 새 파일명을 미리
+정했을 때 기존 파일과 충돌하는지도 읽기 전용으로 확인합니다.
+
+최종 JPG/PDF 용량은 실제 인코딩이나 추출을 하기 전에는 정확하게 알 수
+없으며 이 미리보기는 용량 준수를 보장하지 않습니다. 파일 경로와
+공고 원문은 출력하지 않고, 변환·업로드·MCP 설정 변경도 수행하지 않습니다.
+자세한 사항은 `RELEASE_NOTES_v32.md`를 참고하세요.
 
 ### v3.1: 실제 서류 없이 전체 처리 연습
 
